@@ -4,9 +4,10 @@
 			"target_name": "native_libnice",
 			"sources": [
 				"native/module.cpp",
-				"native/agent.cpp",
-				"native/stream.cpp",
-				"native/helper.cpp",
+				"native/Agent.cpp",
+			],
+			"include_dirs"  : [
+				"<!(node -e \"require('nan')\")"
 			],
 			"defines": [
 				#'DO_DEBUG'
@@ -20,6 +21,13 @@
 			'ldflags': [
 				'<!@(pkg-config --libs nice glib-2.0)',
 			],
+            'xcode_settings': {
+                'OTHER_CFLAGS': [
+                    "-std=c++11",
+                    "-mmacosx-version-min=10.7",
+                    "<!@(pkg-config --cflags nice glib-2.0)",
+                ]
+            }
 		}
 	],
 }
