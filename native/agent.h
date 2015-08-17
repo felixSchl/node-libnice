@@ -40,10 +40,16 @@ namespace libnice {
       static NAN_SETTER(SetProxyType);
       static NAN_GETTER(GetProxyUsername);
       static NAN_SETTER(SetProxyUsername);
+      static NAN_GETTER(GetStunPacingTimer);
+      static NAN_SETTER(SetStunPacingTimer);
       static NAN_GETTER(GetStunServer);
       static NAN_SETTER(SetStunServer);
       static NAN_GETTER(GetStunServerPort);
       static NAN_SETTER(SetStunServerPort);
+      static NAN_GETTER(GetUpnp);
+      static NAN_SETTER(SetUpnp);
+      static NAN_GETTER(GetUpnpTimeout);
+      static NAN_SETTER(SetUpnpTimeout);
 
       GMainLoop* main_loop;
       GMainContext* main_context;

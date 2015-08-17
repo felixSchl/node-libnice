@@ -44,6 +44,8 @@ namespace libnice {
     PROTO_GETSET(Agent, "proxyUsername", ProxyUsername);
     PROTO_GETSET(Agent, "stunServer", StunServer);
     PROTO_GETSET(Agent, "stunServerPort", StunServerPort);
+    PROTO_GETSET(Agent, "upnp", Upnp);
+    PROTO_GETSET(Agent, "upnpTimeout", Upnp);
 
     /**
      * Export Agent
@@ -80,4 +82,6 @@ namespace libnice {
   IMPL_GETSET_STR(Agent, agent, "proxy-username", ProxyUsername)
   IMPL_GETSET_STR(Agent, agent, "stun-server", StunServer)
   IMPL_GETSET_UINT32(Agent, agent, "stun-server-port", StunServerPort)
+  IMPL_GETSET_BOOL(Agent, agent, "upnp", Upnp);
+  IMPL_GETSET_UINT32(Agent, agent, "upnp-timeout", UpnpTimeout)
 }
