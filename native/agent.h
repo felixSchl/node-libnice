@@ -1,9 +1,13 @@
 #ifndef LIBNICE_AGENT_H
 #define LIBNICE_AGENT_H
 
+#include <uv.h>
 #include <v8.h>
 #include <nan.h>
 #include <glib.h>
+#include <deque>
+#include <mutex>
+#include <thread>
 #include <nice/nice.h>
 
 namespace libnice {
@@ -14,6 +18,7 @@ namespace libnice {
 
     private:
       explicit Agent();
+      ~Agent();
 
       static Nan::Persistent<v8::Function> constructor;
 
@@ -54,6 +59,23 @@ namespace libnice {
       GMainLoop* main_loop;
       GMainContext* main_context;
       NiceAgent* agent;
+
+      std::thread thread;
+      std::mutex work_mutex;
+      uv_async_t* async;
+      std::deque<std::function<void(void)>> work_queue;
+
+      void runOnNodeThread(const std::function<void(void)>& fun);
+      static void work(uv_async_t *async);
+
+      /**
+       * Signal callbacks
+       */
+
+      static void onGatheringDone(
+        NiceAgent *nice_agent
+      , guint stream_id
+      , gpointer user_data);
   };
 }
 
