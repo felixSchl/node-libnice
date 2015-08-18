@@ -32,11 +32,6 @@ namespace libnice {
      */
 
     PROTO_METHOD(Agent, "gatherCandidates", GatherCandidates);
-
-    /**
-     * Properties
-     */
-
     PROTO_GETSET(Agent, "controllingMode", ControllingMode);
     PROTO_GETSET(Agent, "iceTcp", IceTcp);
     PROTO_GETSET(Agent, "iceUdp", IceTcp);
@@ -72,14 +67,6 @@ namespace libnice {
   void Agent::GatherCandidates(const Nan::FunctionCallbackInfo<v8::Value>& info) {
     Agent* agent = ObjectWrap::Unwrap<Agent>(info.Holder());
   }
-
-  /**
-   * Properties
-   */
-
-  /**
-   * Get / Set controlling-mode
-   */
 
   IMPL_GETSET_BOOL(Agent, agent, "controlling-mode", ControllingMode)
   IMPL_GETSET_BOOL(Agent, agent, "ice-tcp", IceTcp)
