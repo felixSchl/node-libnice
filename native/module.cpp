@@ -1,7 +1,7 @@
 #include <node.h>
 #include <v8.h>
 
-#include "Agent.h"
+#include "agent.h"
 
 void initAll(v8::Handle<v8::Object> exports) {
   libnice::Agent::Init(exports);
