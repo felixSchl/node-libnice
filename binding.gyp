@@ -4,8 +4,8 @@
             "target_name": "native_libnice",
             "sources": [
                 "native/module.cpp",
-                "native/Stream.cpp",
-                "native/Agent.cpp",
+                "native/stream.cpp",
+                "native/agent.cpp",
             ],
             "include_dirs"  : [
                 "<!(node -e \"require('nan')\")"
