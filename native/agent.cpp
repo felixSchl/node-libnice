@@ -97,8 +97,8 @@ namespace libnice {
     /**
      * Prototype methods
      */
-    PROTO_METHOD(Agent, "addStream", AddStream);
-
+    PROTO_METHOD(Agent, "addStream",             AddStream);
+    PROTO_METHOD(Agent, "generateLocalSdp",      GenerateLocalSdp);
     PROTO_GETSET(Agent, "controllingMode",       ControllingMode);
     PROTO_GETSET(Agent, "iceTcp",                IceTcp);
     PROTO_GETSET(Agent, "iceUdp",                IceUdp);
@@ -126,6 +126,10 @@ namespace libnice {
 
     Agent::constructor.Reset(tpl->GetFunction());
   }
+
+  /*****************************************************************************
+   * Methods
+   ****************************************************************************/
 
   NAN_METHOD(Agent::New) {
     Agent* agent = new Agent();
@@ -185,6 +189,16 @@ namespace libnice {
      */
 
     info.GetReturnValue().Set(stream);
+  }
+
+  NAN_METHOD(Agent::GenerateLocalSdp) {
+    Agent* agent = Nan::ObjectWrap::Unwrap<Agent>(info.Holder());
+    const gchar* sdp = nice_agent_generate_local_sdp(agent->nice_agent);
+    if (sdp == NULL) {
+      info.GetReturnValue().Set(Nan::Undefined());
+    } else {
+      info.GetReturnValue().Set(Nan::New(sdp).ToLocalChecked());
+    }
   }
 
   /*****************************************************************************

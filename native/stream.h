@@ -24,6 +24,7 @@ namespace libnice {
 
       static NAN_METHOD(New);
       static NAN_METHOD(GatherCandidates);
+      static NAN_GETTER(GetId);
       static NAN_GETTER(GetName);
       static NAN_SETTER(SetName);
 

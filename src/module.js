@@ -1,7 +1,6 @@
 'use strict';
 
 var libnice = require('../build/Release/native_libnice')
-  , util = require('util')
   , EventEmitter = require('events').EventEmitter;
 
 function inherits(target, source) {
@@ -16,13 +15,11 @@ inherits(libnice.Stream, EventEmitter);
 var agent = new libnice.Agent()
   , stream = agent.addStream();
 
-console.log(util.inspect(stream));
-console.log('stream name:', stream.name);
-
+stream.name = 'application';
 stream.on('gathering-done', function() {
-  console.log('awesome');
+  console.log('candidates gathered for stream', stream.id);
+  console.log(agent.generateLocalSdp());
 });
 
-console.log(stream.gatherCandidates());
-console.log(stream.gatherCandidates());
-console.log(stream.gatherCandidates());
+stream.gatherCandidates();
+

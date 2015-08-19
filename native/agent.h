@@ -27,6 +27,7 @@ namespace libnice {
 
       static NAN_METHOD(New);
       static NAN_METHOD(AddStream);
+      static NAN_METHOD(GenerateLocalSdp);
 
       static NAN_GETTER(GetControllingMode);
       static NAN_SETTER(SetControllingMode);

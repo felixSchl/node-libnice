@@ -41,8 +41,9 @@ namespace libnice {
      * Prototype
      */
 
-    PROTO_METHOD(Stream, "gatherCandidates", GatherCandidates);
-    PROTO_GETSET(Stream, "name",             Name);
+    PROTO_METHOD  (Stream, "gatherCandidates", GatherCandidates);
+    PROTO_READONLY(Stream, "id",               Id);
+    PROTO_GETSET  (Stream, "name",             Name);
 
     /**
      * Export Stream
@@ -60,6 +61,11 @@ namespace libnice {
   /*****************************************************************************
    * Implement getters/setters
    ****************************************************************************/
+
+  NAN_GETTER(Stream::GetId) {
+    Stream* stream = Nan::ObjectWrap::Unwrap<Stream>(info.This());
+    info.GetReturnValue().Set(Nan::New(stream->stream_id));
+  }
 
   NAN_GETTER(Stream::GetName) {
     Stream* stream = Nan::ObjectWrap::Unwrap<Stream>(info.This());
