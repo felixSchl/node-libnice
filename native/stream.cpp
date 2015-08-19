@@ -62,18 +62,31 @@ namespace libnice {
    ****************************************************************************/
 
   NAN_GETTER(Stream::GetName) {
-    Stream* stream = Nan::ObjectWrap::Unwrap<Stream>(info.Holder());
-    // Agent* agent = Nan::ObjectWrap::Unwrap<Agent>(Nan::New(stream->agent));
-    //
-    // const gchar* name = nice_agent_get_stream_name(
-    //   agent->nice_agent
-    // , stream->stream_id);
+    Stream* stream = Nan::ObjectWrap::Unwrap<Stream>(info.This());
+    Agent* agent = Nan::ObjectWrap::Unwrap<Agent>(Nan::New(stream->agent));
 
-    // std::cout << "STREAM NAME `" << name << "`" << std::endl;
-    // info.GetReturnValue().Set(Nan::New(name).ToLocalChecked());
+    const gchar* name = nice_agent_get_stream_name(
+      agent->nice_agent
+    , stream->stream_id);
+
+    if (name == NULL) {
+      info.GetReturnValue().Set(Nan::Undefined());
+    } else {
+      info.GetReturnValue().Set(Nan::New(name).ToLocalChecked());
+    }
   }
 
   NAN_SETTER(Stream::SetName) {
+    Stream* stream = Nan::ObjectWrap::Unwrap<Stream>(info.This());
+    Agent* agent = Nan::ObjectWrap::Unwrap<Agent>(Nan::New(stream->agent));
+    v8::String::Utf8Value param(value->ToString());
+    std::string from = std::string(*param);
+    bool res = nice_agent_set_stream_name(
+      agent->nice_agent
+    , stream->stream_id
+    , from.c_str());
+    // XXX: Throw if `res` is false
+    info.GetReturnValue().Set(Nan::Undefined());
   }
 
   /*****************************************************************************
@@ -90,7 +103,7 @@ namespace libnice {
   }
 
   NAN_METHOD(Stream::GatherCandidates) {
-    Stream* stream = Nan::ObjectWrap::Unwrap<Stream>(info.Holder());
+    Stream* stream = Nan::ObjectWrap::Unwrap<Stream>(info.This());
     Agent* agent = Nan::ObjectWrap::Unwrap<Agent>(Nan::New(stream->agent));
     bool res = nice_agent_gather_candidates(
       agent->nice_agent
