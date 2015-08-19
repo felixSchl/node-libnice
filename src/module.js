@@ -18,7 +18,11 @@ var agent = new libnice.Agent()
 stream.name = 'application';
 stream.on('gathering-done', function() {
   console.log('candidates gathered for stream', stream.id);
-  console.log(agent.generateLocalSdp());
+  var localSdp = agent.generateLocalSdp();
+  console.log('local sdp', localSdp);
+  console.log('parsing remote sdp', localSdp);
+  var numCandidatesAdded = agent.parseRemoteSdp(localSdp);
+  console.log('number of candidats added:', numCandidatesAdded);
 });
 
 stream.gatherCandidates();

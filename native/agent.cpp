@@ -99,6 +99,7 @@ namespace libnice {
      */
     PROTO_METHOD(Agent, "addStream",             AddStream);
     PROTO_METHOD(Agent, "generateLocalSdp",      GenerateLocalSdp);
+    PROTO_METHOD(Agent, "parseRemoteSdp",        ParseRemoteSdp);
     PROTO_GETSET(Agent, "controllingMode",       ControllingMode);
     PROTO_GETSET(Agent, "iceTcp",                IceTcp);
     PROTO_GETSET(Agent, "iceUdp",                IceUdp);
@@ -199,6 +200,20 @@ namespace libnice {
     } else {
       info.GetReturnValue().Set(Nan::New(sdp).ToLocalChecked());
     }
+  }
+
+  NAN_METHOD(Agent::ParseRemoteSdp) {
+    Agent* agent = Nan::ObjectWrap::Unwrap<Agent>(info.Holder());
+
+    v8::String::Utf8Value param(info[0]->ToString());
+    std::string from = std::string(*param);
+
+    int res = nice_agent_parse_remote_sdp(
+      agent->nice_agent
+    , from.c_str());
+
+    // XXX: Throw error on negative `res`
+    info.GetReturnValue().Set(Nan::New(res));
   }
 
   /*****************************************************************************
