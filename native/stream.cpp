@@ -42,6 +42,7 @@ namespace libnice {
      */
 
     PROTO_METHOD(Stream, "gatherCandidates", GatherCandidates);
+    PROTO_GETSET(Stream, "name",             Name);
 
     /**
      * Export Stream
@@ -54,6 +55,25 @@ namespace libnice {
      */
 
     Stream::constructor.Reset(tpl->GetFunction());
+  }
+
+  /*****************************************************************************
+   * Implement getters/setters
+   ****************************************************************************/
+
+  NAN_GETTER(Stream::GetName) {
+    Stream* stream = Nan::ObjectWrap::Unwrap<Stream>(info.Holder());
+    // Agent* agent = Nan::ObjectWrap::Unwrap<Agent>(Nan::New(stream->agent));
+    //
+    // const gchar* name = nice_agent_get_stream_name(
+    //   agent->nice_agent
+    // , stream->stream_id);
+
+    // std::cout << "STREAM NAME `" << name << "`" << std::endl;
+    // info.GetReturnValue().Set(Nan::New(name).ToLocalChecked());
+  }
+
+  NAN_SETTER(Stream::SetName) {
   }
 
   /*****************************************************************************

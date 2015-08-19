@@ -24,6 +24,8 @@ namespace libnice {
 
       static NAN_METHOD(New);
       static NAN_METHOD(GatherCandidates);
+      static NAN_GETTER(GetName);
+      static NAN_SETTER(SetName);
 
       void onGatheringDone();
       Nan::Persistent<v8::Object> agent;

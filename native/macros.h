@@ -20,7 +20,7 @@
     , tpl->GetFunction())              \
 
 #define IMPL_GETTER_VAL(class, gobj, prop, field, type)  \
-  NAN_GETTER(Agent::Get##field) {                        \
+  NAN_GETTER(class::Get##field) {                        \
     type val;                                            \
     class* obj = ObjectWrap::Unwrap<class>(info.This()); \
     const gchar* property_name = prop;                   \

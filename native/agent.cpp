@@ -99,20 +99,20 @@ namespace libnice {
      */
     PROTO_METHOD(Agent, "addStream", AddStream);
 
-    PROTO_GETSET(Agent, "controllingMode", ControllingMode);
-    PROTO_GETSET(Agent, "iceTcp", IceTcp);
-    PROTO_GETSET(Agent, "iceUdp", IceTcp);
-    PROTO_GETSET(Agent, "keepaliveConncheck", KeepAliveConnCheck);
+    PROTO_GETSET(Agent, "controllingMode",       ControllingMode);
+    PROTO_GETSET(Agent, "iceTcp",                IceTcp);
+    PROTO_GETSET(Agent, "iceUdp",                IceUdp);
+    PROTO_GETSET(Agent, "keepaliveConncheck",    KeepAliveConnCheck);
     PROTO_GETSET(Agent, "maxConnectivityChecks", MaxConnectivityChecks);
-    PROTO_GETSET(Agent, "proxyIp", ProxyIp);
-    PROTO_GETSET(Agent, "proxyPassword", ProxyPassword);
-    PROTO_GETSET(Agent, "proxyPort", ProxyPort);
-    PROTO_GETSET(Agent, "proxyType", ProxyType);
-    PROTO_GETSET(Agent, "proxyUsername", ProxyUsername);
-    PROTO_GETSET(Agent, "stunServer", StunServer);
-    PROTO_GETSET(Agent, "stunServerPort", StunServerPort);
-    PROTO_GETSET(Agent, "upnp", Upnp);
-    PROTO_GETSET(Agent, "upnpTimeout", Upnp);
+    PROTO_GETSET(Agent, "proxyIp",               ProxyIp);
+    PROTO_GETSET(Agent, "proxyPassword",         ProxyPassword);
+    PROTO_GETSET(Agent, "proxyPort",             ProxyPort);
+    PROTO_GETSET(Agent, "proxyType",             ProxyType);
+    PROTO_GETSET(Agent, "proxyUsername",         ProxyUsername);
+    PROTO_GETSET(Agent, "stunServer",            StunServer);
+    PROTO_GETSET(Agent, "stunServerPort",        StunServerPort);
+    PROTO_GETSET(Agent, "upnp",                  Upnp);
+    PROTO_GETSET(Agent, "upnpTimeout",           Upnp);
 
     /**
      * Export Agent
@@ -310,20 +310,4 @@ namespace libnice {
         Nan::New(agent->persistent()), "emit", argc, argv);
     });
   }
-
-// void Agent::stateChanged(NiceAgent *nice_agent, guint stream_id, guint component_id, guint state, gpointer user_data) {
-//  Agent *agent = reinterpret_cast<Agent*>(user_data);
-//
-//  DEBUG("state changed to " << state << " on component " << component_id << " of stream " << stream_id);
-//
-//  agent->addWork([=]() {
-//      auto it = agent->_streams.find(stream_id);
-//
-//      if(it != agent->_streams.end()) {
-//          it->second->stateChanged(component_id, state);
-//      } else {
-//          DEBUG("state changed on unknown stream");
-//      }
-//  });
-// }
 }
