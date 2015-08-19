@@ -122,10 +122,21 @@ namespace libnice {
    ****************************************************************************/
 
   void Stream::onGatheringDone() {
-
     const int argc = 1;
-      v8::Local<v8::Value> argv[argc] = {
-        Nan::New("gathering-done").ToLocalChecked(),
+    v8::Local<v8::Value> argv[argc] = {
+      Nan::New("gathering-done").ToLocalChecked(),
+    };
+
+    Nan::MakeCallback(
+        Nan::New(this->persistent()), "emit", argc, argv);
+  }
+
+  void Stream::onStateChanged(guint state, guint component_id) {
+    const int argc = 3;
+    v8::Local<v8::Value> argv[argc] = {
+      Nan::New("state-changed").ToLocalChecked()
+    , Nan::New(state)
+    , Nan::New(component_id)
     };
 
     Nan::MakeCallback(

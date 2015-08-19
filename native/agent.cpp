@@ -208,9 +208,18 @@ namespace libnice {
     v8::String::Utf8Value param(info[0]->ToString());
     std::string from = std::string(*param);
 
+    /**
+     * XXX:
+     *  PREVENT LOCKING OURSELVES TO DEATH HERE!
+     *  CALLING THIS FUNCTION MAY FIRE CONNECTED SIGNALS WHICH ALSO WANT TO
+     *  EXECUTE ON THE `work_queue`, HENCE WAITING FOR US TO FINISH FIRST.
+     */
+
+    std::cout << "parse pre" << from << std::endl;
     int res = nice_agent_parse_remote_sdp(
       agent->nice_agent
     , from.c_str());
+    std::cout << "parse post" << std::endl;
 
     // XXX: Throw error on negative `res`
     info.GetReturnValue().Set(Nan::New(res));
@@ -250,11 +259,8 @@ namespace libnice {
   }
 
   void Agent::work(uv_async_t *async) {
-
     Agent *agent = (Agent*) async->data;
-
     std::lock_guard<std::mutex> guard(agent->work_mutex);
-
     while(agent->work_queue.size()) {
       agent->work_queue.front()();
       agent->work_queue.pop_front();
@@ -295,17 +301,19 @@ namespace libnice {
   void Agent::onGatheringDone(
     NiceAgent *nice_agent
   , guint stream_id
-  , gpointer user_data) {
-    Agent *agent = reinterpret_cast<Agent*>(user_data);
+  , gpointer user_data
+  ) {
+    Agent* agent = reinterpret_cast<Agent*>(user_data);
+
+    /**
+     * Invoke callback on matching stream
+     */
+
+    auto it = agent->streams.find(stream_id);
+    assert(it != agent->streams.end());
+    auto stream = it->second;
     agent->run([=]() {
-
-      /**
-       * Invoke callback on matching stream
-       */
-
-      auto stream = agent->streams.find(stream_id);
-      assert(stream != agent->streams.end());
-      stream->second->onGatheringDone();
+      stream->onGatheringDone();
     });
   }
 
@@ -314,26 +322,39 @@ namespace libnice {
   , guint stream_id
   , guint component_id
   , guint state
-  , gpointer user_data) {
+  , gpointer user_data
+  ) {
+    Agent* agent = reinterpret_cast<Agent*>(user_data);
 
-    DEBUG(
-      "state changed to " << state <<
-      " on component " << component_id <<
-      " of stream " << stream_id);
+    /**
+     * Invoke callback on matching stream
+     */
 
-    Agent *agent = reinterpret_cast<Agent*>(user_data);
+    auto it = agent->streams.find(stream_id);
+    assert(it != agent->streams.end());
+    auto stream = it->second;
+    agent->run([=]() {
+      assert(false);
+      stream->onStateChanged(state, component_id);
+    });
   }
 
   void Agent::onNewCandidateFull(
     NiceAgent* nice_agent
   , NiceCandidate* candidate
-  , gpointer user_data) {
+  , gpointer user_data
+  ) {
     Agent* agent = reinterpret_cast<Agent*>(user_data);
+
+    /**
+     * Invoke callback
+     */
+
     agent->run([=]() {
       const int argc = 1;
       v8::Local<v8::Value> argv[argc] = {
-        Nan::New("new-candidate-full").ToLocalChecked(),
-        // XXX: Serialize and send candidate with callback
+        Nan::New("new-candidate-full").ToLocalChecked()
+      , // XXX: Serialize and send candidate with callback
       };
       Nan::MakeCallback(
         Nan::New(agent->persistent()), "emit", argc, argv);

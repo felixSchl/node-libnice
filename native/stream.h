@@ -29,6 +29,8 @@ namespace libnice {
       static NAN_SETTER(SetName);
 
       void onGatheringDone();
+      void onStateChanged(guint state, guint component_id);
+
       Nan::Persistent<v8::Object> agent;
       int stream_id;
       int num_components;
