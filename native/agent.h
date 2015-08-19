@@ -9,10 +9,12 @@
 #include <thread>
 #include <glib.h>
 #include <nice/nice.h>
-#include "Stream.h"
+#include "stream.h"
 
 namespace libnice {
   class Agent : public Nan::ObjectWrap {
+
+    friend class Stream;
 
     public:
       static void Init(v8::Handle<v8::Object> exports);
@@ -84,6 +86,11 @@ namespace libnice {
       , guint stream_id
       , guint component_id
       , guint state
+      , gpointer user_data);
+
+      static void onNewCandidateFull(
+        NiceAgent* nice_agent
+      , NiceCandidate* state
       , gpointer user_data);
 
       static void receive(

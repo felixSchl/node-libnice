@@ -3,6 +3,7 @@
         {
             "target_name": "native_libnice",
             "sources": [
+                "native/helper.cpp",
                 "native/module.cpp",
                 "native/stream.cpp",
                 "native/agent.cpp",

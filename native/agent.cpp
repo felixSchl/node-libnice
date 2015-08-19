@@ -1,10 +1,12 @@
 #include <uv.h>
 #include <nan.h>
 #include <iostream>
-#include "macros.h"
-#include "agent.h"
 #include <thread>
 #include <mutex>
+#include <assert.h>
+#include "helper.h"
+#include "macros.h"
+#include "agent.h"
 #include "stream.h"
 
 namespace libnice {
@@ -45,6 +47,12 @@ namespace libnice {
       G_OBJECT(this->nice_agent)
     , "component-state-changed"
     , G_CALLBACK(Agent::onStateChanged)
+    , this);
+
+    g_signal_connect(
+      G_OBJECT(this->nice_agent)
+    , "new-candidate-full"
+    , G_CALLBACK(Agent::onNewCandidateFull)
     , this);
 
     /**
@@ -259,16 +267,16 @@ namespace libnice {
     NiceAgent *nice_agent
   , guint stream_id
   , gpointer user_data) {
-    std::cout << "gathering done" << std::endl;
     Agent *agent = reinterpret_cast<Agent*>(user_data);
     agent->run([=]() {
-        std::cout << "on v8 thread" << std::endl;
-        // auto it = agent->_streams.find(stream_id);
-        // if(it != agent->_streams.end()) {
-        //     it->second->gatheringDone();
-        // } else {
-        //     DEBUG("gathering done on unknown stream");
-        // }
+
+      /**
+       * Invoke callback on matching stream
+       */
+
+      auto stream = agent->streams.find(stream_id);
+      assert(stream != agent->streams.end());
+      stream->second->onGatheringDone();
     });
   }
 
@@ -278,7 +286,44 @@ namespace libnice {
   , guint component_id
   , guint state
   , gpointer user_data) {
-    std::cout << "component state change" << std::endl;
+
+    DEBUG(
+      "state changed to " << state <<
+      " on component " << component_id <<
+      " of stream " << stream_id);
+
     Agent *agent = reinterpret_cast<Agent*>(user_data);
   }
+
+  void Agent::onNewCandidateFull(
+    NiceAgent* nice_agent
+  , NiceCandidate* candidate
+  , gpointer user_data) {
+    Agent* agent = reinterpret_cast<Agent*>(user_data);
+    agent->run([=]() {
+      const int argc = 1;
+      v8::Local<v8::Value> argv[argc] = {
+        Nan::New("new-candidate-full").ToLocalChecked(),
+        // XXX: Serialize and send candidate with callback
+      };
+      Nan::MakeCallback(
+        Nan::New(agent->persistent()), "emit", argc, argv);
+    });
+  }
+
+// void Agent::stateChanged(NiceAgent *nice_agent, guint stream_id, guint component_id, guint state, gpointer user_data) {
+//  Agent *agent = reinterpret_cast<Agent*>(user_data);
+//
+//  DEBUG("state changed to " << state << " on component " << component_id << " of stream " << stream_id);
+//
+//  agent->addWork([=]() {
+//      auto it = agent->_streams.find(stream_id);
+//
+//      if(it != agent->_streams.end()) {
+//          it->second->stateChanged(component_id, state);
+//      } else {
+//          DEBUG("state changed on unknown stream");
+//      }
+//  });
+// }
 }

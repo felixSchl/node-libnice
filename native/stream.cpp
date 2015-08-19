@@ -24,10 +24,8 @@ namespace libnice {
     this->num_components = num_components;
   }
 
+
   Stream::~Stream() {
-    if (!this->agent.IsEmpty()) {
-      this->agent.Reset();
-    }
   }
 
   Nan::Persistent<v8::Function> Stream::constructor;
@@ -40,7 +38,7 @@ namespace libnice {
     tpl->SetClassName(Nan::New("Stream").ToLocalChecked());
 
     /**
-     * Prototype 
+     * Prototype
      */
 
     PROTO_METHOD(Stream, "gatherCandidates", GatherCandidates);
@@ -72,11 +70,26 @@ namespace libnice {
   }
 
   NAN_METHOD(Stream::GatherCandidates) {
-    // Stream* stream = ObjectWrap::Unwrap<Stream>(info.Holder());
-    // Agent* agent = ObjectWrap::Unwrap<Agent>(stream->agent);
-    // bool res = nice_agent_gather_candidates(
-    //   agent->nice_agent
-    // , stream_id);
-    // info.GetReturnValue().Set(Nan::New(res));
+    Stream* stream = Nan::ObjectWrap::Unwrap<Stream>(info.Holder());
+    Agent* agent = Nan::ObjectWrap::Unwrap<Agent>(Nan::New(stream->agent));
+    bool res = nice_agent_gather_candidates(
+      agent->nice_agent
+    , stream->stream_id);
+    info.GetReturnValue().Set(Nan::New(res));
+  }
+
+  /*****************************************************************************
+   * Callbacks
+   ****************************************************************************/
+
+  void Stream::onGatheringDone() {
+
+    const int argc = 1;
+      v8::Local<v8::Value> argv[argc] = {
+        Nan::New("gathering-done").ToLocalChecked(),
+    };
+
+    Nan::MakeCallback(
+        Nan::New(this->persistent()), "emit", argc, argv);
   }
 }
