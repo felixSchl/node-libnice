@@ -3,8 +3,9 @@
 #include <iostream>
 #include <thread>
 #include <mutex>
-#include "Stream.h"
-#include "Agent.h"
+#include "macros.h"
+#include "stream.h"
+#include "agent.h"
 
 namespace libnice {
 
@@ -37,24 +38,18 @@ namespace libnice {
     auto tpl = Nan::New<v8::FunctionTemplate>(Stream::New);
     tpl->InstanceTemplate()->SetInternalFieldCount(1);
     tpl->SetClassName(Nan::New("Stream").ToLocalChecked());
-    auto proto = tpl->PrototypeTemplate();
 
     /**
-     * Prototype methods
+     * Prototype 
      */
 
-    Nan::SetPrototypeMethod(
-      tpl
-    , "gatherCandidates"
-    , Stream::GatherCandidates);
+    PROTO_METHOD(Stream, "gatherCandidates", GatherCandidates);
 
     /**
      * Export Stream
      */
 
-    exports->Set(
-      Nan::New("Stream").ToLocalChecked()
-    , tpl->GetFunction());
+    MODULE_EXPORT("Stream");
 
     /**
      * Tie the knot
@@ -77,11 +72,11 @@ namespace libnice {
   }
 
   NAN_METHOD(Stream::GatherCandidates) {
-    Stream* stream = ObjectWrap::Unwrap<Stream>(info.Holder());
-    Agent* agent = ObjectWrap::Unwrap<Agent>(stream->agent);
-    bool res = nice_agent_gather_candidates(
-      agent->nice_agent
-    , stream_id);
-    info.GetReturnValue().Set(Nan::New(res));
+    // Stream* stream = ObjectWrap::Unwrap<Stream>(info.Holder());
+    // Agent* agent = ObjectWrap::Unwrap<Agent>(stream->agent);
+    // bool res = nice_agent_gather_candidates(
+    //   agent->nice_agent
+    // , stream_id);
+    // info.GetReturnValue().Set(Nan::New(res));
   }
 }
