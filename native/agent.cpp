@@ -89,7 +89,6 @@ namespace libnice {
     /**
      * Prototype methods
      */
-    PROTO_METHOD(Agent, "gatherCandidates", GatherCandidates);
     PROTO_METHOD(Agent, "addStream", AddStream);
 
     PROTO_GETSET(Agent, "controllingMode", ControllingMode);
@@ -180,20 +179,28 @@ namespace libnice {
     info.GetReturnValue().Set(stream);
   }
 
-  IMPL_GETSET_BOOL(Agent, agent, "controlling-mode", ControllingMode)
-  IMPL_GETSET_BOOL(Agent, agent, "ice-tcp", IceTcp)
-  IMPL_GETSET_BOOL(Agent, agent, "ice-udp", IceUdp)
-  IMPL_GETSET_BOOL(Agent, agent, "keepalive-conncheck", KeepAliveConnCheck)
-  IMPL_GETSET_UINT32(Agent, agent, "max-connectivity-checks", MaxConnectivityChecks)
-  IMPL_GETSET_STR(Agent, agent, "proxy-ip", ProxyIp)
-  IMPL_GETSET_STR(Agent, agent, "proxy-password", ProxyPassword)
-  IMPL_GETSET_UINT32(Agent, agent, "proxy-port", ProxyPort)
-  IMPL_GETSET_UINT32(Agent, agent, "proxy-type", ProxyType)
-  IMPL_GETSET_STR(Agent, agent, "proxy-username", ProxyUsername)
-  IMPL_GETSET_STR(Agent, agent, "stun-server", StunServer)
-  IMPL_GETSET_UINT32(Agent, agent, "stun-server-port", StunServerPort)
-  IMPL_GETSET_BOOL(Agent, agent, "upnp", Upnp);
-  IMPL_GETSET_UINT32(Agent, agent, "upnp-timeout", UpnpTimeout)
+  /*****************************************************************************
+   * Implement getters/setters
+   ****************************************************************************/
+
+#define GETSET_BOOL(a, b)   IMPL_GETSET_BOOL(Agent, nice_agent, a, b)
+#define GETSET_UINT32(a, b) IMPL_GETSET_UINT32(Agent, nice_agent, a, b)
+#define GETSET_STR(a, b)    IMPL_GETSET_STR(Agent, nice_agent, a, b)
+
+  GETSET_BOOL   ("controlling-mode",        ControllingMode)
+  GETSET_BOOL   ("ice-tcp",                 IceTcp)
+  GETSET_BOOL   ("ice-udp",                 IceUdp)
+  GETSET_BOOL   ("keepalive-conncheck",     KeepAliveConnCheck)
+  GETSET_UINT32 ("max-connectivity-checks", MaxConnectivityChecks)
+  GETSET_STR    ("proxy-ip",                ProxyIp)
+  GETSET_STR    ("proxy-password",          ProxyPassword)
+  GETSET_UINT32 ("proxy-port",              ProxyPort)
+  GETSET_UINT32 ("proxy-type",              ProxyType)
+  GETSET_STR    ("proxy-username",          ProxyUsername)
+  GETSET_STR    ("stun-server",             StunServer)
+  GETSET_UINT32 ("stun-server-port",        StunServerPort)
+  GETSET_BOOL   ("upnp",                    Upnp);
+  GETSET_UINT32 ("upnp-timeout",            UpnpTimeout)
 
   /*****************************************************************************
    * Async work
@@ -274,5 +281,4 @@ namespace libnice {
     std::cout << "component state change" << std::endl;
     Agent *agent = reinterpret_cast<Agent*>(user_data);
   }
->>>>>>> 4f2a299... Bring back async code
 }
