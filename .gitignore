@@ -1,4 +1,5 @@
-*.swp
+*.sw[omnpqrstuvwx]
+*.un~
 build
 node_modules
 core
