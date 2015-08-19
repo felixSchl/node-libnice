@@ -20,9 +20,9 @@ namespace libnice {
      * Initialize async worker
      */
 
-    this->async = (uv_async_t *) malloc(sizeof(*this->async));
-    uv_async_init(uv_default_loop(), this->async, &Agent::work);
-    this->async->data = this;
+    // this->async = (uv_async_t*) malloc(sizeof(*this->async));
+    this->async.data = this;
+    uv_async_init(uv_default_loop(), &this->async, &Agent::work);
 
     /**
      * Create a NiceAgent
@@ -75,7 +75,7 @@ namespace libnice {
     g_object_unref(this->nice_agent);
     this->nice_agent = NULL;
 
-    uv_close((uv_handle_t*) this->async, (uv_close_cb) free);
+    uv_close((uv_handle_t*) &this->async, (uv_close_cb) free);
   }
 
 
@@ -199,14 +199,21 @@ namespace libnice {
     }
   }
 
-  gboolean Agent::RunParseRemoteSdp(gpointer user_data) {
+  GLIB_CALLBACK(Agent::RunParseRemoteSdp) {
     auto args = reinterpret_cast<Agent::ParseRemoteSdpArgs*>(user_data);
+
+    /**
+     * Call into libnice to parse the sdp
+     */
 
     int res = nice_agent_parse_remote_sdp(
       args->agent->nice_agent
     , args->sdp->c_str());
-
     delete args->sdp;
+
+    /**
+     * Invoke callback back on uv thread
+     */
 
     if (args->callback) {
       args->agent->run([=]() {
@@ -218,7 +225,7 @@ namespace libnice {
       delete args;
     }
 
-    return G_SOURCE_REMOVE;
+    GLIB_CALLBACK_RETURN;
   }
 
   NAN_METHOD(Agent::ParseRemoteSdp) {
@@ -234,11 +241,12 @@ namespace libnice {
     /**
      * Push the data onto the glib thread.
      */
+
     auto args = new struct Agent::ParseRemoteSdpArgs;
     args->agent = agent;
     args->sdp = new std::string(sdp);
     args->callback = callback;
-    g_idle_add((GSourceFunc) RunParseRemoteSdp, args);
+    RUN_GLIB(agent->main_context, Agent::RunParseRemoteSdp, args);
 
     info.GetReturnValue().Set(Nan::Undefined());
   }
@@ -273,7 +281,7 @@ namespace libnice {
   void Agent::run(const std::function<void(void)>& fun) {
     std::lock_guard<std::mutex> guard(this->work_mutex);
     this->work_queue.push_back(fun);
-    uv_async_send(this->async);
+    uv_async_send(&this->async);
   }
 
   void Agent::work(uv_async_t *async) {
@@ -327,7 +335,7 @@ namespace libnice {
      * Invoke callback on matching stream
      */
 
-    agent->run([=]() {
+    agent->run([agent, stream_id]() {
       auto it = agent->streams.find(stream_id);
       assert(it != agent->streams.end());
       auto stream = it->second;

@@ -5,8 +5,12 @@
 #include <nan.h>
 #include <glib.h>
 #include <nice/nice.h>
+#include "macros.h"
 
 namespace libnice {
+
+  class Agent;
+
   class Stream : public Nan::ObjectWrap {
 
     friend class Agent;
@@ -21,6 +25,20 @@ namespace libnice {
       , int stream_id
       , int num_components);
       ~Stream();
+
+      struct GatherCandidatesArgs {
+        friend class Agent;
+        friend class Stream;
+        Agent* agent;
+        Stream* stream;
+        Nan::Callback* callback;
+      };
+
+      /**
+       * Glib idle functions
+       */
+
+      static GLIB_CALLBACK(RunGatherCandidates);
 
       static NAN_METHOD(New);
       static NAN_METHOD(GatherCandidates);

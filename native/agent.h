@@ -13,8 +13,6 @@
 
 namespace libnice {
 
-  struct ParseRemoteSdpArgs;
-
   class Agent : public Nan::ObjectWrap {
 
     friend class Stream;
@@ -78,7 +76,7 @@ namespace libnice {
       std::map<int, Stream*> streams;
       std::thread thread;
       std::mutex work_mutex;
-      uv_async_t* async;
+      uv_async_t async;
       std::deque<std::function<void(void)>> work_queue;
 
       void run(const std::function<void(void)>& fun);
@@ -88,7 +86,7 @@ namespace libnice {
        * Glib idle functions
        */
 
-      static gboolean RunParseRemoteSdp(gpointer user_data);
+      static GLIB_CALLBACK(RunParseRemoteSdp);
 
       /**
        * Signal callbacks

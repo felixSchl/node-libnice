@@ -108,13 +108,24 @@ namespace libnice {
     info.GetReturnValue().Set(info.This());
   }
 
+  GLIB_CALLBACK(Stream::RunGatherCandidates) {
+    auto args = reinterpret_cast<Stream::GatherCandidatesArgs*>(user_data);
+    bool res = nice_agent_gather_candidates(
+      args->agent->nice_agent
+    , args->stream->stream_id);
+    GLIB_CALLBACK_RETURN;
+  }
+
   NAN_METHOD(Stream::GatherCandidates) {
     Stream* stream = Nan::ObjectWrap::Unwrap<Stream>(info.This());
     Agent* agent = Nan::ObjectWrap::Unwrap<Agent>(Nan::New(stream->agent));
-    bool res = nice_agent_gather_candidates(
-      agent->nice_agent
-    , stream->stream_id);
-    info.GetReturnValue().Set(Nan::New(res));
+
+    auto args = new struct Stream::GatherCandidatesArgs;
+    args->agent = agent;
+    args->stream = stream;
+    RUN_GLIB(agent->main_context, Stream::RunGatherCandidates, args);
+
+    info.GetReturnValue().Set(Nan::Undefined());
   }
 
   /*****************************************************************************
@@ -126,9 +137,8 @@ namespace libnice {
     v8::Local<v8::Value> argv[argc] = {
       Nan::New("gathering-done").ToLocalChecked(),
     };
-
-    Nan::MakeCallback(
-        Nan::New(this->persistent()), "emit", argc, argv);
+    Nan::MakeCallback(Nan::New(this->persistent()), "emit", argc, argv);
+    std::cout << "here" << std::endl;
   }
 
   void Stream::onStateChanged(guint state, guint component_id) {
@@ -138,8 +148,6 @@ namespace libnice {
     , Nan::New(state)
     , Nan::New(component_id)
     };
-
-    Nan::MakeCallback(
-        Nan::New(this->persistent()), "emit", argc, argv);
+    Nan::MakeCallback(Nan::New(this->persistent()), "emit", argc, argv);
   }
 }

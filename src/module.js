@@ -30,33 +30,28 @@ function inherits(target, source) {
 inherits(libnice.Agent, EventEmitter);
 inherits(libnice.Stream, EventEmitter);
 
-var agent = new libnice.Agent()
-  , stream = agent.addStream();
+var agentL = new libnice.Agent()
+  , streamL = agentL.addStream();
 
-agent.iceTcp = false;
-stream.name = 'application';
-
-stream.on('gathering-done', function() {
-  console.log('candidates gathered for stream', stream.id);
-  var localSdp = agent.generateLocalSdp();
-  console.log('local sdp', localSdp);
-  console.log('parsing remote sdp', localSdp);
-  var numCandidatesAdded = agent.parseRemoteSdp(
-    localSdp
-  , function(x) { console.log('here', x); }
-  );
-  console.log('Remote sdp parsed');
-  console.log('number of candidates added:', numCandidatesAdded);
+agentL.iceTcp = false;
+agentL.controllingMode = false;
+streamL.name = 'application';
+streamL.on('gathering-done', function() {
+  console.log('agentL - gathering done');
+  // var sdpL = agentL.generateLocalSdp();
+  // console.log('agentL - sdp:', sdpL);
 });
+streamL.gatherCandidates();
 
-process.on('exit', function(x, y) {
-  console.log(x, y);
-})
+var agentR = new libnice.Agent()
+  , streamR = agentR.addStream();
 
-// stream.on('state-changed', function(state, componentId) {
-//   console.log(
-//     'state changed for component', componentId
-//   , ':', NiceComponentState[state]);
-// });
-
-stream.gatherCandidates();
+agentR.iceTcp = false;
+agentR.controllingMode = false;
+streamR.name = 'application';
+streamR.on('gathering-done', function() {
+  // console.log('agentR - gathering done');
+  // var sdpR = agentR.generateLocalSdp();
+  // console.log('agentR - sdp:', sdpR);
+});
+streamR.gatherCandidates();
