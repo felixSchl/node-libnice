@@ -5,6 +5,7 @@
 #include "agent.h"
 #include <thread>
 #include <mutex>
+#include "stream.h"
 
 namespace libnice {
 
@@ -25,7 +26,7 @@ namespace libnice {
      * Create a NiceAgent
      */
 
-    this->agent = nice_agent_new(
+    this->nice_agent = nice_agent_new(
       this->main_context
     , NICE_COMPATIBILITY_RFC5245
     );
@@ -35,21 +36,28 @@ namespace libnice {
      */
 
     g_signal_connect(
-      G_OBJECT(this->agent)
+      G_OBJECT(this->nice_agent)
     , "candidate-gathering-done"
     , G_CALLBACK(Agent::onGatheringDone)
-    , this
-    );
+    , this);
+
+    g_signal_connect(
+      G_OBJECT(this->nice_agent)
+    , "component-state-changed"
+    , G_CALLBACK(Agent::onStateChanged)
+    , this);
 
     /**
      * This creates a new thread, secure your v8 calls!
      */
 
+    std::cout << "starting thread" << std::endl;
     this->thread = std::thread([=]() {
-      std::cout << "running";
+      std::cout << "Agent's main loop is running" << std:: endl;
       g_main_loop_run(this->main_loop);
       g_main_loop_unref(this->main_loop);
       g_main_context_unref(this->main_context);
+      std::cout << "Agent's main loop has finished" << std:: endl;
       this->main_loop = NULL;
       this->main_context = NULL;
     });
@@ -59,8 +67,8 @@ namespace libnice {
     g_main_loop_quit(this->main_loop);
     this->thread.join();
 
-    g_object_unref(this->agent);
-    this->agent = NULL;
+    g_object_unref(this->nice_agent);
+    this->nice_agent = NULL;
 
     uv_close((uv_handle_t*) this->async, (uv_close_cb) free);
   }
@@ -79,10 +87,11 @@ namespace libnice {
     tpl->SetClassName(Nan::New("Agent").ToLocalChecked());
 
     /**
-     * Prototype
+     * Prototype methods
      */
-
     PROTO_METHOD(Agent, "gatherCandidates", GatherCandidates);
+    PROTO_METHOD(Agent, "addStream", AddStream);
+
     PROTO_GETSET(Agent, "controllingMode", ControllingMode);
     PROTO_GETSET(Agent, "iceTcp", IceTcp);
     PROTO_GETSET(Agent, "iceUdp", IceTcp);
@@ -117,8 +126,58 @@ namespace libnice {
     info.GetReturnValue().Set(info.This());
   }
 
-  void Agent::GatherCandidates(const Nan::FunctionCallbackInfo<v8::Value>& info) {
+  NAN_METHOD(Agent::AddStream) {
     Agent* agent = ObjectWrap::Unwrap<Agent>(info.Holder());
+    NiceAgent* nice_agent = agent->nice_agent;
+
+    /**
+     * Create a new Stream
+     */
+
+    int num_components = info[0]->IsUndefined()
+      ? 1
+      : info[0]->IntegerValue();
+    int stream_id = nice_agent_add_stream(nice_agent, num_components);
+
+    /**
+     * Wrap Stream
+     */
+
+    const int argc = 3;
+    v8::Local<v8::Value> argv[argc] = {
+      v8::Local<v8::Value>(info.This())
+    , Nan::New(stream_id)
+    , Nan::New(num_components)
+    };
+
+    auto cons = Nan::New<v8::Function>(Stream::constructor);
+    auto stream = cons->NewInstance(argc, argv);
+
+    /**
+     * Attach receive callback
+     */
+
+    for(int index = 1; index <= num_components; ++index) {
+      nice_agent_attach_recv(
+        nice_agent
+      , stream_id
+      , index
+      , agent->main_context
+      , Agent::receive
+      , agent);
+    }
+
+    /**
+     * Save stream for callback handling
+     */
+
+    agent->streams[stream_id] = ObjectWrap::Unwrap<Stream>(stream);
+
+    /**
+     * Return the stream
+     */
+
+    info.GetReturnValue().Set(stream);
   }
 
   IMPL_GETSET_BOOL(Agent, agent, "controlling-mode", ControllingMode)
@@ -140,7 +199,7 @@ namespace libnice {
    * Async work
    ****************************************************************************/
 
-  void Agent::runOnNodeThread(const std::function<void(void)>& fun) {
+  void Agent::run(const std::function<void(void)>& fun) {
     std::lock_guard<std::mutex> guard(this->work_mutex);
     this->work_queue.push_back(fun);
     uv_async_send(this->async);
@@ -159,15 +218,61 @@ namespace libnice {
   }
 
   /*****************************************************************************
+   * Callbacks
+   ****************************************************************************/
+
+  void Agent::receive(
+    NiceAgent* nice_agent
+  , guint stream_id
+  , guint component_id
+  , guint len
+  , gchar* buf
+  , gpointer user_data) {
+      Agent *agent = reinterpret_cast<Agent*>(user_data);
+
+      // // TODO: this might not be the best solution ...
+      // auto tmp_buf = std::make_shared<std::vector<char>>(len);
+      // memcpy(tmp_buf->data(), buf, len);
+      //
+      // agent->addWork([=]() {
+      //     auto it = agent->_streams.find(stream_id);
+      //     if(it != agent->_streams.end()) {
+      //         it->second->receive(component_id, tmp_buf->data(), len);
+      //     } else {
+      //         DEBUG("receiving on unknown stream");
+      //     }
+      // });
+  }
+
+  /*****************************************************************************
    * Signal callbacks
    ****************************************************************************/
 
   void Agent::onGatheringDone(
-                NiceAgent *nice_agent
-              , guint stream_id
-              , gpointer user_data) {
+    NiceAgent *nice_agent
+  , guint stream_id
+  , gpointer user_data) {
+    std::cout << "gathering done" << std::endl;
     Agent *agent = reinterpret_cast<Agent*>(user_data);
-    std::cout << "cool";
+    agent->run([=]() {
+        std::cout << "on v8 thread" << std::endl;
+        // auto it = agent->_streams.find(stream_id);
+        // if(it != agent->_streams.end()) {
+        //     it->second->gatheringDone();
+        // } else {
+        //     DEBUG("gathering done on unknown stream");
+        // }
+    });
+  }
+
+  void Agent::onStateChanged(
+    NiceAgent *nice_agent
+  , guint stream_id
+  , guint component_id
+  , guint state
+  , gpointer user_data) {
+    std::cout << "component state change" << std::endl;
+    Agent *agent = reinterpret_cast<Agent*>(user_data);
   }
 >>>>>>> 4f2a299... Bring back async code
 }

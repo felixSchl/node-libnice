@@ -4,11 +4,12 @@
 #include <uv.h>
 #include <v8.h>
 #include <nan.h>
-#include <glib.h>
 #include <deque>
 #include <mutex>
 #include <thread>
+#include <glib.h>
 #include <nice/nice.h>
+#include "Stream.h"
 
 namespace libnice {
   class Agent : public Nan::ObjectWrap {
@@ -23,7 +24,7 @@ namespace libnice {
       static Nan::Persistent<v8::Function> constructor;
 
       static NAN_METHOD(New);
-      static NAN_METHOD(GatherCandidates);
+      static NAN_METHOD(AddStream);
 
       static NAN_GETTER(GetControllingMode);
       static NAN_SETTER(SetControllingMode);
@@ -58,14 +59,15 @@ namespace libnice {
 
       GMainLoop* main_loop;
       GMainContext* main_context;
-      NiceAgent* agent;
+      NiceAgent* nice_agent;
 
+      std::map<int, Stream*> streams;
       std::thread thread;
       std::mutex work_mutex;
       uv_async_t* async;
       std::deque<std::function<void(void)>> work_queue;
 
-      void runOnNodeThread(const std::function<void(void)>& fun);
+      void run(const std::function<void(void)>& fun);
       static void work(uv_async_t *async);
 
       /**
@@ -75,6 +77,21 @@ namespace libnice {
       static void onGatheringDone(
         NiceAgent *nice_agent
       , guint stream_id
+      , gpointer user_data);
+
+      static void onStateChanged(
+        NiceAgent *nice_agent
+      , guint stream_id
+      , guint component_id
+      , guint state
+      , gpointer user_data);
+
+      static void receive(
+        NiceAgent* agent
+      , guint stream_id
+      , guint component_id
+      , guint len
+      , gchar* buf
       , gpointer user_data);
   };
 }
