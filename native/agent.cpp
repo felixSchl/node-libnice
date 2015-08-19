@@ -59,13 +59,10 @@ namespace libnice {
      * This creates a new thread, secure your v8 calls!
      */
 
-    std::cout << "starting thread" << std::endl;
     this->thread = std::thread([=]() {
-      std::cout << "Agent's main loop is running" << std:: endl;
       g_main_loop_run(this->main_loop);
       g_main_loop_unref(this->main_loop);
       g_main_context_unref(this->main_context);
-      std::cout << "Agent's main loop has finished" << std:: endl;
       this->main_loop = NULL;
       this->main_context = NULL;
     });
@@ -202,27 +199,48 @@ namespace libnice {
     }
   }
 
+  gboolean Agent::RunParseRemoteSdp(gpointer user_data) {
+    auto args = reinterpret_cast<Agent::ParseRemoteSdpArgs*>(user_data);
+
+    int res = nice_agent_parse_remote_sdp(
+      args->agent->nice_agent
+    , args->sdp->c_str());
+
+    delete args->sdp;
+
+    if (args->callback) {
+      args->agent->run([=]() {
+        v8::Local<v8::Value> num_candidates_added = Nan::New(res);
+        args->callback->Call(1, &num_candidates_added);
+        delete args;
+      });
+    } else {
+      delete args;
+    }
+
+    return G_SOURCE_REMOVE;
+  }
+
   NAN_METHOD(Agent::ParseRemoteSdp) {
     Agent* agent = Nan::ObjectWrap::Unwrap<Agent>(info.Holder());
 
-    v8::String::Utf8Value param(info[0]->ToString());
-    std::string from = std::string(*param);
+    auto sdp = std::string(*v8::String::Utf8Value(info[0]->ToString()));
+
+    Nan::Callback* callback = NULL;
+    if (!info[1]->IsUndefined()) {
+      callback = new Nan::Callback(info[1].As<v8::Function>());
+    }
 
     /**
-     * XXX:
-     *  PREVENT LOCKING OURSELVES TO DEATH HERE!
-     *  CALLING THIS FUNCTION MAY FIRE CONNECTED SIGNALS WHICH ALSO WANT TO
-     *  EXECUTE ON THE `work_queue`, HENCE WAITING FOR US TO FINISH FIRST.
+     * Push the data onto the glib thread.
      */
+    auto args = new struct Agent::ParseRemoteSdpArgs;
+    args->agent = agent;
+    args->sdp = new std::string(sdp);
+    args->callback = callback;
+    g_idle_add((GSourceFunc) RunParseRemoteSdp, args);
 
-    std::cout << "parse pre" << from << std::endl;
-    int res = nice_agent_parse_remote_sdp(
-      agent->nice_agent
-    , from.c_str());
-    std::cout << "parse post" << std::endl;
-
-    // XXX: Throw error on negative `res`
-    info.GetReturnValue().Set(Nan::New(res));
+    info.GetReturnValue().Set(Nan::Undefined());
   }
 
   /*****************************************************************************
@@ -309,10 +327,10 @@ namespace libnice {
      * Invoke callback on matching stream
      */
 
-    auto it = agent->streams.find(stream_id);
-    assert(it != agent->streams.end());
-    auto stream = it->second;
     agent->run([=]() {
+      auto it = agent->streams.find(stream_id);
+      assert(it != agent->streams.end());
+      auto stream = it->second;
       stream->onGatheringDone();
     });
   }
@@ -330,11 +348,10 @@ namespace libnice {
      * Invoke callback on matching stream
      */
 
-    auto it = agent->streams.find(stream_id);
-    assert(it != agent->streams.end());
-    auto stream = it->second;
     agent->run([=]() {
-      assert(false);
+      auto it = agent->streams.find(stream_id);
+      assert(it != agent->streams.end());
+      auto stream = it->second;
       stream->onStateChanged(state, component_id);
     });
   }

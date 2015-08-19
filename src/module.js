@@ -11,7 +11,7 @@ var NiceComponentState = {
 , READY: 'READY'
 , FAILED: 'FAILED'
 , LAST: 'LAST'
-}
+};
 
 NiceComponentState[0] = NiceComponentState.DISCONNECTED;
 NiceComponentState[1] = NiceComponentState.GATHERING;
@@ -41,10 +41,17 @@ stream.on('gathering-done', function() {
   var localSdp = agent.generateLocalSdp();
   console.log('local sdp', localSdp);
   console.log('parsing remote sdp', localSdp);
-  var numCandidatesAdded = agent.parseRemoteSdp(localSdp);
+  var numCandidatesAdded = agent.parseRemoteSdp(
+    localSdp
+  , function(x) { console.log('here', x); }
+  );
   console.log('Remote sdp parsed');
   console.log('number of candidates added:', numCandidatesAdded);
 });
+
+process.on('exit', function(x, y) {
+  console.log(x, y);
+})
 
 // stream.on('state-changed', function(state, componentId) {
 //   console.log(

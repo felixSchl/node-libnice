@@ -12,6 +12,9 @@
 #include "stream.h"
 
 namespace libnice {
+
+  struct ParseRemoteSdpArgs;
+
   class Agent : public Nan::ObjectWrap {
 
     friend class Stream;
@@ -22,6 +25,13 @@ namespace libnice {
     private:
       explicit Agent();
       ~Agent();
+
+      struct ParseRemoteSdpArgs {
+        friend class Agent;
+        Agent* agent;
+        std::string* sdp;
+        Nan::Callback* callback;
+      };
 
       static Nan::Persistent<v8::Function> constructor;
 
@@ -75,6 +85,12 @@ namespace libnice {
       static void work(uv_async_t *async);
 
       /**
+       * Glib idle functions
+       */
+
+      static gboolean RunParseRemoteSdp(gpointer user_data);
+
+      /**
        * Signal callbacks
        */
 
@@ -103,6 +119,7 @@ namespace libnice {
       , gchar* buf
       , gpointer user_data);
   };
+
 }
 
 #endif
