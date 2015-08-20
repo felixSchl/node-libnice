@@ -42,10 +42,12 @@ namespace libnice {
 
       static NAN_METHOD(New);
       static NAN_METHOD(GatherCandidates);
+      static NAN_METHOD(Send);
       static NAN_GETTER(GetId);
       static NAN_GETTER(GetName);
       static NAN_SETTER(SetName);
 
+      void onData(int component, const char* buf, size_t size);
       void onGatheringDone();
       void onStateChanged(guint state, guint component_id);
 

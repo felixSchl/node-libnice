@@ -14,7 +14,6 @@ namespace libnice {
   , int stream_id
   , int num_components)
   {
-    std::cout << "BIRTH OF STREAM " << this << std::endl;
 
     /**
      * Store agent as persistent
@@ -27,7 +26,6 @@ namespace libnice {
 
 
   Stream::~Stream() {
-    std::cout << "DEATH OF STREAM " << this << std::endl;
   }
 
   Nan::Persistent<v8::Function> Stream::constructor;
@@ -44,6 +42,7 @@ namespace libnice {
      */
 
     PROTO_METHOD  (Stream, "gatherCandidates", GatherCandidates);
+    PROTO_METHOD  (Stream, "send",             Send);
     PROTO_READONLY(Stream, "id",               Id);
     PROTO_GETSET  (Stream, "name",             Name);
 
@@ -130,11 +129,43 @@ namespace libnice {
     info.GetReturnValue().Set(Nan::Undefined());
   }
 
+  NAN_METHOD(Stream::Send) {
+    Stream* stream = Nan::ObjectWrap::Unwrap<Stream>(info.This());
+    Agent* agent = Nan::ObjectWrap::Unwrap<Agent>(Nan::New(stream->agent));
+
+    int component = info[0]->Uint32Value();
+    v8::Local<v8::Object> buffer = info[1]->ToObject();
+
+    size_t size = node::Buffer::Length(buffer);
+    char* buf = node::Buffer::Data(buffer);
+
+    int ret = nice_agent_send(
+      agent->nice_agent
+    , stream->stream_id
+    , component
+    , size
+    , buf);
+
+    info.GetReturnValue().Set(Nan::New(ret));
+}
+
   /*****************************************************************************
    * Callbacks
    ****************************************************************************/
 
+  void Stream::onData(int component, const char* buf, size_t size) {
+    Nan::HandleScope scope;
+    const int argc = 3;
+    v8::Local<v8::Value> argv[argc] = {
+      Nan::New("data").ToLocalChecked()
+    , Nan::New(component)
+    , Nan::CopyBuffer(buf, size).ToLocalChecked()
+    };
+    Nan::MakeCallback(Nan::New(this->persistent()), "emit", argc, argv);
+  }
+
   void Stream::onGatheringDone() {
+    Nan::HandleScope scope;
     const int argc = 1;
     v8::Local<v8::Value> argv[argc] = {
       Nan::New("gathering-done").ToLocalChecked(),
@@ -143,6 +174,7 @@ namespace libnice {
   }
 
   void Stream::onStateChanged(guint state, guint component_id) {
+    Nan::HandleScope scope;
     const int argc = 3;
     v8::Local<v8::Value> argv[argc] = {
       Nan::New("state-changed").ToLocalChecked()

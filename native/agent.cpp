@@ -13,8 +13,6 @@ namespace libnice {
 
   Agent::Agent() {
 
-    std::cout << "BIRTH OF AGENT " << this << std::endl;
-
     this->main_loop = g_main_loop_new(NULL, FALSE);
     this->main_context = g_main_loop_get_context(main_loop);
 
@@ -75,8 +73,6 @@ namespace libnice {
   }
 
   Agent::~Agent() {
-
-    std::cout << "DEATH OF AGENT " << this << std::endl;
 
     g_main_loop_quit(this->main_loop);
     this->thread.join();
@@ -229,11 +225,22 @@ namespace libnice {
      */
 
     if (args->callback) {
-      // args->agent->run([=]() {
-      //   v8::Local<v8::Value> num_candidates_added = Nan::New(res);
-      //   args->callback->Call(1, &num_candidates_added);
-      //   delete args;
-      // });
+      args->agent->run([res, args]() {
+        if (res >= 0) {
+          v8::Local<v8::Value> argv[] = {
+            Nan::Null()
+          , Nan::New(res)
+          };
+          args->callback->Call(2, argv);
+        } else {
+          v8::Local<v8::Value> argv[] = {
+            Nan::New(res)
+          };
+          args->callback->Call(1, argv);
+        }
+        delete args->callback;
+        delete args;
+      });
     } else {
       delete args;
     }
@@ -318,21 +325,25 @@ namespace libnice {
   , guint component_id
   , guint len
   , gchar* buf
-  , gpointer user_data) {
-      Agent *agent = reinterpret_cast<Agent*>(user_data);
+  , gpointer user_data
+  ) {
+    Agent *agent = reinterpret_cast<Agent*>(user_data);
 
-      // // TODO: this might not be the best solution ...
-      // auto tmp_buf = std::make_shared<std::vector<char>>(len);
-      // memcpy(tmp_buf->data(), buf, len);
-      //
-      // agent->addWork([=]() {
-      //     auto it = agent->_streams.find(stream_id);
-      //     if(it != agent->_streams.end()) {
-      //         it->second->receive(component_id, tmp_buf->data(), len);
-      //     } else {
-      //         DEBUG("receiving on unknown stream");
-      //     }
-      // });
+    /**
+     * Invoke callback on matching stream
+     */
+
+    // TODO: this might not be the best solution ...
+    auto tmp_buf = std::make_shared<std::vector<char>>(len);
+    memcpy(tmp_buf->data(), buf, len);
+
+    agent->run([agent, stream_id, component_id, tmp_buf, len]() {
+      Stream* stream = ObjectWrap::Unwrap<Stream>(
+        Nan::To<v8::Object>(
+          agent->handle()->Get(Nan::New(stream_id)))
+            .ToLocalChecked());
+      stream->onData(component_id, tmp_buf->data(), len);
+    });
   }
 
   /*****************************************************************************
