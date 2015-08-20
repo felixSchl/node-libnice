@@ -41,7 +41,8 @@ namespace libnice {
      * Prototype
      */
 
-    PROTO_RDONLY(Component, "id", Id);
+    PROTO_RDONLY(Component, "id",   Id);
+    PROTO_METHOD(Component, "send", Send);
 
     /**
      * Export Component
@@ -68,6 +69,24 @@ namespace libnice {
     info.GetReturnValue().Set(info.This());
   }
 
+  NAN_METHOD(Component::Send) {
+    Component* component = Nan::ObjectWrap::Unwrap<Component>(info.This());
+
+    const int argc = 2;
+    v8::Local<v8::Value> argv[argc] = {
+      Nan::New(component->id)
+    , info[0]
+    };
+
+    /**
+     * Proxy the call to `stream.send`
+     */
+
+    Nan::New(component->stream)->Get(
+      Nan::New("send").ToLocalChecked())
+        .As<v8::Function>()->Call(Nan::New(component->stream), argc, argv);
+}
+
   /*****************************************************************************
    * Implement getters/setters
    ****************************************************************************/
@@ -87,6 +106,17 @@ namespace libnice {
     v8::Local<v8::Value> argv[argc] = {
       Nan::New("state-changed").ToLocalChecked()
     , Nan::New(state)
+    };
+    Nan::MakeCallback(Nan::New(this->persistent()), "emit", argc, argv);
+  }
+
+  void Component::onData(const char* buf, size_t size) {
+    Nan::HandleScope scope;
+
+    const int argc = 2;
+    v8::Local<v8::Value> argv[argc] = {
+      Nan::New("data").ToLocalChecked()
+    , Nan::CopyBuffer(buf, size).ToLocalChecked()
     };
     Nan::MakeCallback(Nan::New(this->persistent()), "emit", argc, argv);
   }

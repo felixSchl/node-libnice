@@ -25,9 +25,11 @@ namespace libnice {
       int id;
 
       static NAN_METHOD(New);
+      static NAN_METHOD(Send);
       static NAN_GETTER(GetId);
 
       void onStateChanged(guint state);
+      void onData(const char* buf, size_t size);
 
       Nan::Persistent<v8::Object> stream;
   };

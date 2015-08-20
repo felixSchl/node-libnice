@@ -168,10 +168,19 @@ namespace libnice {
   }
 
   NAN_METHOD(Stream::Send) {
+    v8::Isolate* isolate = v8::Isolate::GetCurrent();
     Stream* stream = Nan::ObjectWrap::Unwrap<Stream>(info.This());
     Agent* agent = Nan::ObjectWrap::Unwrap<Agent>(Nan::New(stream->agent));
 
     int component = info[0]->Uint32Value();
+
+    if(!node::Buffer::HasInstance(info[1])) {
+      isolate->ThrowException(
+        v8::Exception::TypeError(
+          Nan::New("Expected buffer").ToLocalChecked()));
+      return;
+    }
+
     v8::Local<v8::Object> buffer = info[1]->ToObject();
 
     size_t size = node::Buffer::Length(buffer);
@@ -218,16 +227,16 @@ namespace libnice {
   void Stream::onData(int component_id, const char* buf, size_t size) {
     Nan::HandleScope scope;
 
-    // Component component* = GET_COMPONENT(component_id);
-    // component->onData(buf, size)
+    Component* component = GET_COMPONENT(component_id);
+    component->onData(buf, size);
 
-    // const int argc = 3;
-    // v8::Local<v8::Value> argv[argc] = {
-    //   Nan::New("data").ToLocalChecked()
-    // , Nan::CopyBuffer(buf, size).ToLocalChecked()
-    // , Nan::New(component)
-    // };
-    // Nan::MakeCallback(Nan::New(this->persistent()), "emit", argc, argv);
+    const int argc = 3;
+    v8::Local<v8::Value> argv[argc] = {
+      Nan::New("data").ToLocalChecked()
+    , Nan::CopyBuffer(buf, size).ToLocalChecked()
+    , Nan::New(component)
+    };
+    Nan::MakeCallback(Nan::New(this->persistent()), "emit", argc, argv);
   }
 
 }
