@@ -21,7 +21,10 @@ namespace libnice {
       Nan::New(agent->streams)->Get(Nan::New(id))) \
         .ToLocalChecked())
 
-  Agent::Agent(int compatibility) {
+  Agent::Agent(
+    bool reliable
+  , int compatibility
+  ) {
     Nan::HandleScope scope;
 
     this->main_loop = g_main_loop_new(NULL, FALSE);
@@ -50,10 +53,17 @@ namespace libnice {
      * Create a NiceAgent
      */
 
-    this->nice_agent = nice_agent_new(
-      this->main_context
-    , (NiceCompatibility) compatibility
-    );
+    if (reliable) {
+      this->nice_agent = nice_agent_new_reliable(
+        this->main_context
+      , (NiceCompatibility) compatibility
+      );
+    } else {
+      this->nice_agent = nice_agent_new(
+        this->main_context
+      , (NiceCompatibility) compatibility
+      );
+    }
 
     /**
      * Connect signals
@@ -92,6 +102,8 @@ namespace libnice {
 
   Agent::~Agent() {
 
+    std::cout << "DEATH OF AGENT (" << this << ")" << std::endl;
+
     g_main_loop_quit(this->main_loop);
     this->thread.join();
 
@@ -120,6 +132,7 @@ namespace libnice {
      */
 
     PROTO_RDONLY(Agent, "streams",               Streams);
+    PROTO_RDONLY(Agent, "reliable",              Reliable);
     PROTO_METHOD(Agent, "addStream",             AddStream);
     PROTO_METHOD(Agent, "generateLocalSdp",      GenerateLocalSdp);
     PROTO_METHOD(Agent, "parseRemoteSdp",        ParseRemoteSdp);
@@ -157,11 +170,21 @@ namespace libnice {
 
   NAN_METHOD(Agent::New) {
     int compatibility = 0;
+    bool reliable = false;
+
     if (!info[0]->IsUndefined()) {
-      compatibility = info[0]->Uint32Value();
+      if (info[0]->IsBoolean()) {
+        reliable = info[0]->BooleanValue();
+      } else {
+        compatibility = info[0]->Uint32Value();
+      }
+    } else {
+      if (!info[1]->IsUndefined()) {
+        compatibility = info[1]->Uint32Value();
+      }
     }
 
-    Agent* agent = new Agent(compatibility);
+    Agent* agent = new Agent(reliable, compatibility);
     agent->Wrap(info.This());
     info.GetReturnValue().Set(info.This());
   }
@@ -297,6 +320,7 @@ namespace libnice {
    * Implement getters/setters
    ****************************************************************************/
 
+#define GET_BOOL(a, b)      IMPL_GETTER_BOOL(Agent, nice_agent, a, b)
 #define GETSET_BOOL(a, b)   IMPL_GETSET_BOOL(Agent, nice_agent, a, b)
 #define GETSET_UINT32(a, b) IMPL_GETSET_UINT32(Agent, nice_agent, a, b)
 #define GETSET_STR(a, b)    IMPL_GETSET_STR(Agent, nice_agent, a, b)
@@ -306,20 +330,21 @@ namespace libnice {
     info.GetReturnValue().Set(Nan::New(agent->streams));
   }
 
-  GETSET_BOOL   ("controlling-mode",        ControllingMode)
-  GETSET_BOOL   ("ice-tcp",                 IceTcp)
-  GETSET_BOOL   ("ice-udp",                 IceUdp)
-  GETSET_BOOL   ("keepalive-conncheck",     KeepAliveConnCheck)
-  GETSET_UINT32 ("max-connectivity-checks", MaxConnectivityChecks)
-  GETSET_STR    ("proxy-ip",                ProxyIp)
-  GETSET_STR    ("proxy-password",          ProxyPassword)
-  GETSET_UINT32 ("proxy-port",              ProxyPort)
-  GETSET_UINT32 ("proxy-type",              ProxyType)
-  GETSET_STR    ("proxy-username",          ProxyUsername)
-  GETSET_STR    ("stun-server",             StunServer)
-  GETSET_UINT32 ("stun-server-port",        StunServerPort)
+  GET_BOOL      ("reliable",                Reliable);
+  GETSET_BOOL   ("controlling-mode",        ControllingMode);
+  GETSET_BOOL   ("ice-tcp",                 IceTcp);
+  GETSET_BOOL   ("ice-udp",                 IceUdp);
+  GETSET_BOOL   ("keepalive-conncheck",     KeepAliveConnCheck);
+  GETSET_UINT32 ("max-connectivity-checks", MaxConnectivityChecks);
+  GETSET_STR    ("proxy-ip",                ProxyIp);
+  GETSET_STR    ("proxy-password",          ProxyPassword);
+  GETSET_UINT32 ("proxy-port",              ProxyPort);
+  GETSET_UINT32 ("proxy-type",              ProxyType);
+  GETSET_STR    ("proxy-username",          ProxyUsername);
+  GETSET_STR    ("stun-server",             StunServer);
+  GETSET_UINT32 ("stun-server-port",        StunServerPort);
   GETSET_BOOL   ("upnp",                    Upnp);
-  GETSET_UINT32 ("upnp-timeout",            UpnpTimeout)
+  GETSET_UINT32 ("upnp-timeout",            UpnpTimeout);
 
   /*****************************************************************************
    * Async work

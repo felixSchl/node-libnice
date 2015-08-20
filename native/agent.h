@@ -22,7 +22,7 @@ namespace libnice {
       static Nan::Persistent<v8::Function> constructor;
 
     private:
-      explicit Agent(int compatibility);
+      explicit Agent(bool reliable, int compatibility);
       ~Agent();
 
       struct ParseRemoteSdpArgs {
@@ -37,6 +37,7 @@ namespace libnice {
       static NAN_METHOD(GenerateLocalSdp);
       static NAN_METHOD(ParseRemoteSdp);
 
+      static NAN_GETTER(GetReliable);
       static NAN_GETTER(GetStreams);
       static NAN_GETTER(GetControllingMode);
       static NAN_SETTER(SetControllingMode);

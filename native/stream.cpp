@@ -57,6 +57,7 @@ namespace libnice {
   }
 
   Stream::~Stream() {
+    std::cout << "DEATH OF STREAM (" << this << ")" << std::endl;
   }
 
   Nan::Persistent<v8::Function> Stream::constructor;

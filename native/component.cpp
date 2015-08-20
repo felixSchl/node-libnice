@@ -26,6 +26,7 @@ namespace libnice {
   }
 
   Component::~Component() {
+    std::cout << "DEATH OF COMPONENT (" << this << ")" << std::endl;
   }
 
   Nan::Persistent<v8::Function> Component::constructor;

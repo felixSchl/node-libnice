@@ -25,7 +25,20 @@
       Nan::New(class).ToLocalChecked() \
     , tpl->GetFunction())              \
 
-#define IMPL_GETTER_VAL(class, gobj, prop, field, type)  \
+#define IMPL_GETTER_BOOL(class, gobj, prop, field)        \
+  NAN_GETTER(class::Get##field) {                         \
+    uint32_t val;                                         \
+    class* obj = ObjectWrap::Unwrap<class>(info.This());  \
+    const gchar* property_name = prop;                    \
+    g_object_get(                                         \
+      G_OBJECT(obj->gobj)                                 \
+    , property_name, &val                                 \
+    , NULL);                                              \
+    info.GetReturnValue().Set(                            \
+      Nan::New(val == 0 ? false : true));                 \
+  }                                                       \
+
+#define IMPL_GETTER_NUM(class, gobj, prop, field, type)  \
   NAN_GETTER(class::Get##field) {                        \
     type val;                                            \
     class* obj = ObjectWrap::Unwrap<class>(info.This()); \
@@ -48,11 +61,11 @@
   }                                                      \
 
 #define IMPL_GETSET_BOOL(class, gobj, prop, field)        \
-  IMPL_GETTER_VAL(class, gobj, prop, field, bool)         \
+  IMPL_GETTER_BOOL(class, gobj, prop, field)              \
   IMPL_SETTER_VAL(class, gobj, prop, field, BooleanValue) \
 
 #define IMPL_GETSET_UINT32(class, gobj, prop, field)     \
-  IMPL_GETTER_VAL(class, gobj, prop, field, uint32_t)    \
+  IMPL_GETTER_NUM(class, gobj, prop, field, uint32_t)    \
   IMPL_SETTER_VAL(class, gobj, prop, field, Uint32Value) \
 
 #define IMPL_GETTER_STR(class, gobj, prop, field)        \
