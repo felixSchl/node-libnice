@@ -305,7 +305,7 @@ namespace libnice {
     uv_async_send(this->async);
   }
 
-  void Agent::work(uv_async_t *async) {
+  NAUV_WORK_CB(Agent::work) {
     Agent *agent = (Agent*) async->data;
     uv_mutex_lock(&agent->async_lock);
     while(agent->work_queue.size()) {

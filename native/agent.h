@@ -81,7 +81,7 @@ namespace libnice {
       std::deque<std::function<void(void)>> work_queue;
 
       void run(const std::function<void(void)>& fun);
-      static void work(uv_async_t *async);
+      static NAUV_WORK_CB(work);
 
       /**
        * Glib idle functions
