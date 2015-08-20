@@ -73,10 +73,11 @@ namespace libnice {
       GMainContext* main_context;
       NiceAgent* nice_agent;
 
-      std::map<int, Stream*> streams;
+      uv_async_t *async;
+      uv_mutex_t async_lock;
+
       std::thread thread;
       std::mutex work_mutex;
-      uv_async_t async;
       std::deque<std::function<void(void)>> work_queue;
 
       void run(const std::function<void(void)>& fun);

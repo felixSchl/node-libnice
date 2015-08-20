@@ -14,6 +14,7 @@ namespace libnice {
   , int stream_id
   , int num_components)
   {
+    std::cout << "BIRTH OF STREAM " << this << std::endl;
 
     /**
      * Store agent as persistent
@@ -26,6 +27,7 @@ namespace libnice {
 
 
   Stream::~Stream() {
+    std::cout << "DEATH OF STREAM " << this << std::endl;
   }
 
   Nan::Persistent<v8::Function> Stream::constructor;
@@ -138,7 +140,6 @@ namespace libnice {
       Nan::New("gathering-done").ToLocalChecked(),
     };
     Nan::MakeCallback(Nan::New(this->persistent()), "emit", argc, argv);
-    std::cout << "here" << std::endl;
   }
 
   void Stream::onStateChanged(guint state, guint component_id) {

@@ -1,6 +1,6 @@
 'use strict';
 
-var libnice = require('../build/Release/native_libnice')
+var libnice = require('../build/Debug/native_libnice')
   , EventEmitter = require('events').EventEmitter;
 
 var NiceComponentState = {
@@ -50,7 +50,7 @@ agentR.iceTcp = false;
 agentR.controllingMode = false;
 streamR.name = 'application';
 streamR.on('gathering-done', function() {
-  // console.log('agentR - gathering done');
+  console.log('agentR - gathering done');
   // var sdpR = agentR.generateLocalSdp();
   // console.log('agentR - sdp:', sdpR);
 });

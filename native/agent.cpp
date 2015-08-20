@@ -13,6 +13,8 @@ namespace libnice {
 
   Agent::Agent() {
 
+    std::cout << "BIRTH OF AGENT " << this << std::endl;
+
     this->main_loop = g_main_loop_new(NULL, FALSE);
     this->main_context = g_main_loop_get_context(main_loop);
 
@@ -20,9 +22,13 @@ namespace libnice {
      * Initialize async worker
      */
 
-    // this->async = (uv_async_t*) malloc(sizeof(*this->async));
-    this->async.data = this;
-    uv_async_init(uv_default_loop(), &this->async, &Agent::work);
+    this->async = new uv_async_t;
+    uv_async_init(
+        uv_default_loop()
+     , this->async
+     , &Agent::work);
+    this->async->data = this;
+    uv_mutex_init(&this->async_lock);
 
     /**
      * Create a NiceAgent
@@ -69,6 +75,9 @@ namespace libnice {
   }
 
   Agent::~Agent() {
+
+    std::cout << "DEATH OF AGENT " << this << std::endl;
+
     g_main_loop_quit(this->main_loop);
     this->thread.join();
 
@@ -87,6 +96,7 @@ namespace libnice {
     /**
      * Prepare constructor template
      */
+
     auto tpl = Nan::New<v8::FunctionTemplate>(Agent::New);
     tpl->InstanceTemplate()->SetInternalFieldCount(1);
     tpl->SetClassName(Nan::New("Agent").ToLocalChecked());
@@ -94,6 +104,7 @@ namespace libnice {
     /**
      * Prototype methods
      */
+
     PROTO_METHOD(Agent, "addStream",             AddStream);
     PROTO_METHOD(Agent, "generateLocalSdp",      GenerateLocalSdp);
     PROTO_METHOD(Agent, "parseRemoteSdp",        ParseRemoteSdp);
@@ -180,7 +191,9 @@ namespace libnice {
      * Save stream for callback handling
      */
 
-    agent->streams[stream_id] = ObjectWrap::Unwrap<Stream>(stream);
+    agent->handle()->Set(
+      Nan::New(stream_id)
+    , stream);
 
     /**
      * Return the stream
@@ -216,11 +229,11 @@ namespace libnice {
      */
 
     if (args->callback) {
-      args->agent->run([=]() {
-        v8::Local<v8::Value> num_candidates_added = Nan::New(res);
-        args->callback->Call(1, &num_candidates_added);
-        delete args;
-      });
+      // args->agent->run([=]() {
+      //   v8::Local<v8::Value> num_candidates_added = Nan::New(res);
+      //   args->callback->Call(1, &num_candidates_added);
+      //   delete args;
+      // });
     } else {
       delete args;
     }
@@ -279,18 +292,20 @@ namespace libnice {
    ****************************************************************************/
 
   void Agent::run(const std::function<void(void)>& fun) {
-    std::lock_guard<std::mutex> guard(this->work_mutex);
+    uv_mutex_lock(&this->async_lock);
     this->work_queue.push_back(fun);
-    uv_async_send(&this->async);
+    uv_mutex_unlock(&this->async_lock);
+    uv_async_send(this->async);
   }
 
   void Agent::work(uv_async_t *async) {
     Agent *agent = (Agent*) async->data;
-    std::lock_guard<std::mutex> guard(agent->work_mutex);
+    uv_mutex_lock(&agent->async_lock);
     while(agent->work_queue.size()) {
       agent->work_queue.front()();
       agent->work_queue.pop_front();
     }
+    uv_mutex_unlock(&agent->async_lock);
   }
 
   /*****************************************************************************
@@ -336,9 +351,10 @@ namespace libnice {
      */
 
     agent->run([agent, stream_id]() {
-      auto it = agent->streams.find(stream_id);
-      assert(it != agent->streams.end());
-      auto stream = it->second;
+      Stream* stream = ObjectWrap::Unwrap<Stream>(
+        Nan::To<v8::Object>(
+          agent->handle()->Get(Nan::New(stream_id)))
+            .ToLocalChecked());
       stream->onGatheringDone();
     });
   }
@@ -356,10 +372,11 @@ namespace libnice {
      * Invoke callback on matching stream
      */
 
-    agent->run([=]() {
-      auto it = agent->streams.find(stream_id);
-      assert(it != agent->streams.end());
-      auto stream = it->second;
+    agent->run([agent, stream_id, component_id, state]() {
+      Stream* stream = ObjectWrap::Unwrap<Stream>(
+        Nan::To<v8::Object>(
+          agent->handle()->Get(Nan::New(stream_id)))
+            .ToLocalChecked());
       stream->onStateChanged(state, component_id);
     });
   }
@@ -375,7 +392,7 @@ namespace libnice {
      * Invoke callback
      */
 
-    agent->run([=]() {
+    agent->run([agent]() {
       const int argc = 1;
       v8::Local<v8::Value> argv[argc] = {
         Nan::New("new-candidate-full").ToLocalChecked()
