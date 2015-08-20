@@ -38,6 +38,7 @@ namespace libnice {
       static NAN_METHOD(GenerateLocalSdp);
       static NAN_METHOD(ParseRemoteSdp);
 
+      static NAN_GETTER(GetStreams);
       static NAN_GETTER(GetControllingMode);
       static NAN_SETTER(SetControllingMode);
       static NAN_GETTER(GetIceTcp);
@@ -72,6 +73,7 @@ namespace libnice {
       GMainLoop* main_loop;
       GMainContext* main_context;
       NiceAgent* nice_agent;
+      Nan::Persistent<v8::Object> streams;
 
       uv_async_t *async;
       uv_mutex_t async_lock;

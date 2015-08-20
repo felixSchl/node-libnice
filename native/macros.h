@@ -1,11 +1,11 @@
 #ifndef LIBNICE_MACROS_H
 #define LIBNICE_MACROS_H
 
-#define PROTO_READONLY(class, propName, fieldName) \
-    Nan::SetAccessor(                              \
-      tpl->PrototypeTemplate()                     \
-    , Nan::New(propName).ToLocalChecked()          \
-    , class::Get##fieldName)                       \
+#define PROTO_RDONLY(class, propName, fieldName) \
+    Nan::SetAccessor(                            \
+      tpl->PrototypeTemplate()                   \
+    , Nan::New(propName).ToLocalChecked()        \
+    , class::Get##fieldName)                     \
 
 #define PROTO_GETSET(class, propName, fieldName) \
     Nan::SetAccessor(                            \

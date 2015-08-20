@@ -24,7 +24,6 @@ namespace libnice {
     this->num_components = num_components;
   }
 
-
   Stream::~Stream() {
   }
 
@@ -41,10 +40,10 @@ namespace libnice {
      * Prototype
      */
 
-    PROTO_METHOD  (Stream, "gatherCandidates", GatherCandidates);
-    PROTO_METHOD  (Stream, "send",             Send);
-    PROTO_READONLY(Stream, "id",               Id);
-    PROTO_GETSET  (Stream, "name",             Name);
+    PROTO_METHOD(Stream, "gatherCandidates", GatherCandidates);
+    PROTO_METHOD(Stream, "send",             Send);
+    PROTO_RDONLY(Stream, "id",               Id);
+    PROTO_GETSET(Stream, "name",             Name);
 
     /**
      * Export Stream

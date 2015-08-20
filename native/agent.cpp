@@ -11,10 +11,24 @@
 
 namespace libnice {
 
+#define ADD_STREAM(id, stream)   \
+  Nan::New(agent->streams)->Set( \
+      Nan::New(id), stream)
+
+#define GET_STREAM(id)                             \
+  ObjectWrap::Unwrap<Stream>(                      \
+    Nan::To<v8::Object>(                           \
+      Nan::New(agent->streams)->Get(Nan::New(id))) \
+        .ToLocalChecked())
+
   Agent::Agent() {
 
     this->main_loop = g_main_loop_new(NULL, FALSE);
     this->main_context = g_main_loop_get_context(main_loop);
+
+    Nan::HandleScope scope;
+    v8::Local<v8::Object> obj = Nan::New<v8::Object>();
+    this->streams.Reset(obj);
 
     /**
      * Initialize async worker
@@ -101,6 +115,7 @@ namespace libnice {
      * Prototype methods
      */
 
+    PROTO_RDONLY(Agent, "streams",               Streams);
     PROTO_METHOD(Agent, "addStream",             AddStream);
     PROTO_METHOD(Agent, "generateLocalSdp",      GenerateLocalSdp);
     PROTO_METHOD(Agent, "parseRemoteSdp",        ParseRemoteSdp);
@@ -187,9 +202,7 @@ namespace libnice {
      * Save stream for callback handling
      */
 
-    agent->handle()->Set(
-      Nan::New(stream_id)
-    , stream);
+    ADD_STREAM(stream_id, stream);
 
     /**
      * Return the stream
@@ -279,6 +292,11 @@ namespace libnice {
 #define GETSET_UINT32(a, b) IMPL_GETSET_UINT32(Agent, nice_agent, a, b)
 #define GETSET_STR(a, b)    IMPL_GETSET_STR(Agent, nice_agent, a, b)
 
+  NAN_GETTER(Agent::GetStreams) {
+    Agent* agent = Nan::ObjectWrap::Unwrap<Agent>(info.This());
+    info.GetReturnValue().Set(Nan::New(agent->streams));
+  }
+
   GETSET_BOOL   ("controlling-mode",        ControllingMode)
   GETSET_BOOL   ("ice-tcp",                 IceTcp)
   GETSET_BOOL   ("ice-udp",                 IceUdp)
@@ -338,10 +356,7 @@ namespace libnice {
     memcpy(tmp_buf->data(), buf, len);
 
     agent->run([agent, stream_id, component_id, tmp_buf, len]() {
-      Stream* stream = ObjectWrap::Unwrap<Stream>(
-        Nan::To<v8::Object>(
-          agent->handle()->Get(Nan::New(stream_id)))
-            .ToLocalChecked());
+      Stream* stream = GET_STREAM(stream_id);
       stream->onData(component_id, tmp_buf->data(), len);
     });
   }
@@ -362,10 +377,7 @@ namespace libnice {
      */
 
     agent->run([agent, stream_id]() {
-      Stream* stream = ObjectWrap::Unwrap<Stream>(
-        Nan::To<v8::Object>(
-          agent->handle()->Get(Nan::New(stream_id)))
-            .ToLocalChecked());
+      Stream* stream = GET_STREAM(stream_id);
       stream->onGatheringDone();
     });
   }
@@ -384,10 +396,7 @@ namespace libnice {
      */
 
     agent->run([agent, stream_id, component_id, state]() {
-      Stream* stream = ObjectWrap::Unwrap<Stream>(
-        Nan::To<v8::Object>(
-          agent->handle()->Get(Nan::New(stream_id)))
-            .ToLocalChecked());
+      Stream* stream = GET_STREAM(stream_id);
       stream->onStateChanged(state, component_id);
     });
   }
