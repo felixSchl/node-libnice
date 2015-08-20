@@ -106,19 +106,19 @@
   IMPL_GETTER_STR(class, gobj, prop, field)       \
   IMPL_SETTER_STR(class, gobj, prop, field)       \
 
-#define RUN_GLIB(ctx, func, data)\
-  GSource* source = g_idle_source_new();\
-  g_source_set_callback(\
-    source\
-  , (GSourceFunc) func\
-  , data\
-  , NULL);\
-  g_source_attach(source, ctx);\
+#define RUN_GLIB(ctx, func, data)        \
+  GSource* source = g_idle_source_new(); \
+  g_source_set_callback(                 \
+    source                               \
+  , (GSourceFunc) func                   \
+  , data                                 \
+  , NULL);                               \
+  g_source_attach(source, ctx);          \
 
-#define GLIB_CALLBACK(name)\
-  gboolean name(gpointer user_data)
+#define GLIB_CALLBACK(name)         \
+  gboolean name(gpointer user_data) \
 
-#define GLIB_CALLBACK_RETURN\
-  return G_SOURCE_REMOVE;
+#define GLIB_CALLBACK_RETURN \
+  return G_SOURCE_REMOVE;    \
 
 #endif
