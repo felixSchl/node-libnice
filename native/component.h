@@ -11,15 +11,25 @@ namespace libnice {
 
   class Component : public Nan::ObjectWrap {
 
+    friend class Agent;
+    friend class Stream;
+
     public:
       static void Init(v8::Handle<v8::Object> exports);
       static Nan::Persistent<v8::Function> constructor;
 
     private:
-      explicit Component(v8::Local<v8::Object> stream);
+      explicit Component(v8::Local<v8::Object> stream, int id);
       ~Component();
 
+      int id;
+
       static NAN_METHOD(New);
+      static NAN_GETTER(GetId);
+
+      void onStateChanged(guint state);
+
+      Nan::Persistent<v8::Object> stream;
   };
 }
 

@@ -12,14 +12,17 @@ namespace libnice {
 
   Component::Component(
     v8::Local<v8::Object> stream
+  , int id
   ) {
-    // Nan::HandleScope scope;
+    Nan::HandleScope scope;
+
+    this->id = id;
 
     /**
      * Store stream as persistent
      */
 
-    // this->stream.Reset(stream);
+    this->stream.Reset(stream);
   }
 
   Component::~Component() {
@@ -33,6 +36,12 @@ namespace libnice {
     auto tpl = Nan::New<v8::FunctionTemplate>(Component::New);
     tpl->InstanceTemplate()->SetInternalFieldCount(1);
     tpl->SetClassName(Nan::New("Component").ToLocalChecked());
+
+    /**
+     * Prototype
+     */
+
+    PROTO_RDONLY(Component, "id", Id);
 
     /**
      * Export Component
@@ -53,8 +62,32 @@ namespace libnice {
 
   NAN_METHOD(Component::New) {
     Component* component = new Component(
-      info[0]->ToObject());
+      info[0]->ToObject()
+    , info[1]->Uint32Value());
     component->Wrap(info.This());
     info.GetReturnValue().Set(info.This());
+  }
+
+  /*****************************************************************************
+   * Implement getters/setters
+   ****************************************************************************/
+
+  NAN_GETTER(Component::GetId) {
+    Component* component = Nan::ObjectWrap::Unwrap<Component>(info.This());
+    info.GetReturnValue().Set(Nan::New(component->id));
+  }
+
+  /*****************************************************************************
+   * Callbacks
+   ****************************************************************************/
+
+  void Component::onStateChanged(guint state) {
+    Nan::HandleScope scope;
+    const int argc = 2;
+    v8::Local<v8::Value> argv[argc] = {
+      Nan::New("state-changed").ToLocalChecked()
+    , Nan::New(state)
+    };
+    Nan::MakeCallback(Nan::New(this->persistent()), "emit", argc, argv);
   }
 }

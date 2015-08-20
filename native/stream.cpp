@@ -10,6 +10,12 @@
 
 namespace libnice {
 
+#define GET_COMPONENT(id)                            \
+  ObjectWrap::Unwrap<Component>(                     \
+    Nan::To<v8::Object>(                             \
+      Nan::New(this->components)->Get(Nan::New(id))) \
+        .ToLocalChecked())
+
   Stream::Stream(
     v8::Local<v8::Object> self
   , v8::Local<v8::Object> agent
@@ -38,8 +44,11 @@ namespace libnice {
      */
 
     for (int i = 1; i < (num_components + 1); i++) {
-      const int argc = 1;
-      v8::Local<v8::Value> argv[argc] = { self };
+      const int argc = 2;
+      v8::Local<v8::Value> argv[argc] = {
+        self
+      , Nan::New(i)
+      };
       auto cons = Nan::New<v8::Function>(Component::constructor);
       auto component = cons->NewInstance(argc, argv);
       obj->Set(Nan::New(i), component);
@@ -182,17 +191,6 @@ namespace libnice {
    * Callbacks
    ****************************************************************************/
 
-  void Stream::onData(int component, const char* buf, size_t size) {
-    Nan::HandleScope scope;
-    const int argc = 3;
-    v8::Local<v8::Value> argv[argc] = {
-      Nan::New("data").ToLocalChecked()
-    , Nan::New(component)
-    , Nan::CopyBuffer(buf, size).ToLocalChecked()
-    };
-    Nan::MakeCallback(Nan::New(this->persistent()), "emit", argc, argv);
-  }
-
   void Stream::onGatheringDone() {
     Nan::HandleScope scope;
     const int argc = 1;
@@ -204,12 +202,32 @@ namespace libnice {
 
   void Stream::onStateChanged(guint state, guint component_id) {
     Nan::HandleScope scope;
+
+    Component* component = GET_COMPONENT(component_id);
+    component->onStateChanged(state);
+
     const int argc = 3;
     v8::Local<v8::Value> argv[argc] = {
       Nan::New("state-changed").ToLocalChecked()
-    , Nan::New(state)
     , Nan::New(component_id)
+    , Nan::New(state)
     };
     Nan::MakeCallback(Nan::New(this->persistent()), "emit", argc, argv);
   }
+
+  void Stream::onData(int component_id, const char* buf, size_t size) {
+    Nan::HandleScope scope;
+
+    // Component component* = GET_COMPONENT(component_id);
+    // component->onData(buf, size)
+
+    // const int argc = 3;
+    // v8::Local<v8::Value> argv[argc] = {
+    //   Nan::New("data").ToLocalChecked()
+    // , Nan::CopyBuffer(buf, size).ToLocalChecked()
+    // , Nan::New(component)
+    // };
+    // Nan::MakeCallback(Nan::New(this->persistent()), "emit", argc, argv);
+  }
+
 }

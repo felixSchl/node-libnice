@@ -14,6 +14,7 @@ namespace libnice {
   class Stream : public Nan::ObjectWrap {
 
     friend class Agent;
+    friend class Component;
 
     public:
       static void Init(v8::Handle<v8::Object> exports);
