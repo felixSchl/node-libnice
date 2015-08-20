@@ -22,7 +22,7 @@ namespace libnice {
       static Nan::Persistent<v8::Function> constructor;
 
     private:
-      explicit Agent();
+      explicit Agent(int compatibility);
       ~Agent();
 
       struct ParseRemoteSdpArgs {

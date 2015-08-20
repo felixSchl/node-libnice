@@ -21,7 +21,7 @@ namespace libnice {
       Nan::New(agent->streams)->Get(Nan::New(id))) \
         .ToLocalChecked())
 
-  Agent::Agent() {
+  Agent::Agent(int compatibility) {
     Nan::HandleScope scope;
 
     this->main_loop = g_main_loop_new(NULL, FALSE);
@@ -52,7 +52,7 @@ namespace libnice {
 
     this->nice_agent = nice_agent_new(
       this->main_context
-    , NICE_COMPATIBILITY_RFC5245
+    , (NiceCompatibility) compatibility
     );
 
     /**
@@ -156,7 +156,12 @@ namespace libnice {
    ****************************************************************************/
 
   NAN_METHOD(Agent::New) {
-    Agent* agent = new Agent();
+    int compatibility = 0;
+    if (!info[0]->IsUndefined()) {
+      compatibility = info[0]->Uint32Value();
+    }
+
+    Agent* agent = new Agent(compatibility);
     agent->Wrap(info.This());
     info.GetReturnValue().Set(info.This());
   }

@@ -138,6 +138,7 @@ namespace libnice {
    ****************************************************************************/
 
   NAN_METHOD(Stream::New) {
+    // XXX: Add input validation
     Stream* stream = new Stream(
       info.This()
     , info[0]->ToObject()
