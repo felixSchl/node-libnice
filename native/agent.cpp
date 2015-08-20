@@ -22,11 +22,15 @@ namespace libnice {
         .ToLocalChecked())
 
   Agent::Agent() {
+    Nan::HandleScope scope;
 
     this->main_loop = g_main_loop_new(NULL, FALSE);
     this->main_context = g_main_loop_get_context(main_loop);
 
-    Nan::HandleScope scope;
+    /**
+     * Prepare the `streams` field
+     */
+
     v8::Local<v8::Object> obj = Nan::New<v8::Object>();
     this->streams.Reset(obj);
 

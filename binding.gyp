@@ -5,6 +5,7 @@
             "sources": [
                 "native/helper.cpp",
                 "native/module.cpp",
+                "native/component.cpp",
                 "native/stream.cpp",
                 "native/agent.cpp",
             ],

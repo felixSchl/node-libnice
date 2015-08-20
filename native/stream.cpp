@@ -6,14 +6,17 @@
 #include "macros.h"
 #include "stream.h"
 #include "agent.h"
+#include "component.h"
 
 namespace libnice {
 
   Stream::Stream(
-    v8::Local<v8::Object> agent
+    v8::Local<v8::Object> self
+  , v8::Local<v8::Object> agent
   , int stream_id
   , int num_components)
   {
+    Nan::HandleScope scope;
 
     /**
      * Store agent as persistent
@@ -22,6 +25,26 @@ namespace libnice {
     this->agent.Reset(agent);
     this->stream_id = stream_id;
     this->num_components = num_components;
+
+    /**
+     * Prepare the `components` field
+     */
+
+    v8::Local<v8::Object> obj = Nan::New<v8::Object>();
+    this->components.Reset(obj);
+
+    /**
+     * Create `num_components` Components
+     */
+
+    for (int i = 1; i < (num_components + 1); i++) {
+      const int argc = 1;
+      v8::Local<v8::Value> argv[argc] = { self };
+      auto cons = Nan::New<v8::Function>(Component::constructor);
+      auto component = cons->NewInstance(argc, argv);
+      obj->Set(Nan::New(i), component);
+    }
+
   }
 
   Stream::~Stream() {
@@ -43,6 +66,7 @@ namespace libnice {
     PROTO_METHOD(Stream, "gatherCandidates", GatherCandidates);
     PROTO_METHOD(Stream, "send",             Send);
     PROTO_RDONLY(Stream, "id",               Id);
+    PROTO_RDONLY(Stream, "components",       Components);
     PROTO_GETSET(Stream, "name",             Name);
 
     /**
@@ -65,6 +89,11 @@ namespace libnice {
   NAN_GETTER(Stream::GetId) {
     Stream* stream = Nan::ObjectWrap::Unwrap<Stream>(info.This());
     info.GetReturnValue().Set(Nan::New(stream->stream_id));
+  }
+
+  NAN_GETTER(Stream::GetComponents) {
+    Stream* stream = Nan::ObjectWrap::Unwrap<Stream>(info.This());
+    info.GetReturnValue().Set(Nan::New(stream->components));
   }
 
   NAN_GETTER(Stream::GetName) {
@@ -101,7 +130,8 @@ namespace libnice {
 
   NAN_METHOD(Stream::New) {
     Stream* stream = new Stream(
-      info[0]->ToObject()
+      info.This()
+    , info[0]->ToObject()
     , info[1]->Uint32Value()
     , info[2]->Uint32Value());
     stream->Wrap(info.This());

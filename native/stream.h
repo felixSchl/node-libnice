@@ -21,7 +21,8 @@ namespace libnice {
 
     private:
       explicit Stream(
-        v8::Local<v8::Object> nice_agent
+        v8::Local<v8::Object> self
+      , v8::Local<v8::Object> agent
       , int stream_id
       , int num_components);
       ~Stream();
@@ -43,6 +44,7 @@ namespace libnice {
       static NAN_METHOD(New);
       static NAN_METHOD(GatherCandidates);
       static NAN_METHOD(Send);
+      static NAN_GETTER(GetComponents);
       static NAN_GETTER(GetId);
       static NAN_GETTER(GetName);
       static NAN_SETTER(SetName);
@@ -52,6 +54,8 @@ namespace libnice {
       void onStateChanged(guint state, guint component_id);
 
       Nan::Persistent<v8::Object> agent;
+      Nan::Persistent<v8::Object> components;
+
       int stream_id;
       int num_components;
   };

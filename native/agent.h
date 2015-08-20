@@ -19,6 +19,7 @@ namespace libnice {
 
     public:
       static void Init(v8::Handle<v8::Object> exports);
+      static Nan::Persistent<v8::Function> constructor;
 
     private:
       explicit Agent();
@@ -30,8 +31,6 @@ namespace libnice {
         std::string* sdp;
         Nan::Callback* callback;
       };
-
-      static Nan::Persistent<v8::Function> constructor;
 
       static NAN_METHOD(New);
       static NAN_METHOD(AddStream);
