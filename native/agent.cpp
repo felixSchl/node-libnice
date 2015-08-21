@@ -134,6 +134,7 @@ namespace libnice {
     PROTO_RDONLY(Agent, "streams",               Streams);
     PROTO_RDONLY(Agent, "reliable",              Reliable);
     PROTO_METHOD(Agent, "addStream",             AddStream);
+    PROTO_METHOD(Agent, "addLocalAddress",       AddLocalAddress);
     PROTO_METHOD(Agent, "generateLocalSdp",      GenerateLocalSdp);
     PROTO_METHOD(Agent, "parseRemoteSdp",        ParseRemoteSdp);
     PROTO_GETSET(Agent, "controllingMode",       ControllingMode);
@@ -291,6 +292,20 @@ namespace libnice {
     }
 
     GLIB_CALLBACK_RETURN;
+  }
+
+  NAN_METHOD(Agent::AddLocalAddress) {
+    Agent* agent = Nan::ObjectWrap::Unwrap<Agent>(info.Holder());
+
+    auto ip = std::string(*v8::String::Utf8Value(info[0]->ToString()));
+
+    NiceAddress* addr = nice_address_new();
+    bool ret = nice_address_set_from_string(addr, ip.c_str());
+    if (ret) {
+      nice_agent_add_local_address(agent->nice_agent, addr);
+    }
+
+    info.GetReturnValue().Set(Nan::New(ret));
   }
 
   NAN_METHOD(Agent::ParseRemoteSdp) {

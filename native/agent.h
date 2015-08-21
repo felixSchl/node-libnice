@@ -36,6 +36,7 @@ namespace libnice {
       static NAN_METHOD(AddStream);
       static NAN_METHOD(GenerateLocalSdp);
       static NAN_METHOD(ParseRemoteSdp);
+      static NAN_METHOD(AddLocalAddress);
 
       static NAN_GETTER(GetReliable);
       static NAN_GETTER(GetStreams);
