@@ -1,6 +1,6 @@
 'use strict';
 
-var libnice = require('../build/Debug/native_libnice')
+var libnice = require('../build/Release/native_libnice')
   , EventEmitter = require('events').EventEmitter;
 
 /**
@@ -67,5 +67,6 @@ inherits(libnice.Component, EventEmitter);
 
 module.exports = {
   Agent: libnice.Agent
-, NiceComponentState: NiceComponentState
+, ComponentState: NiceComponentState
+, Compatibility: NiceCompatibility
 };
