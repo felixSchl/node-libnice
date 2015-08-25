@@ -25,6 +25,8 @@ namespace libnice {
       explicit Agent(bool reliable, int compatibility);
       ~Agent();
 
+      int num_received = 0;
+
       struct ParseRemoteSdpArgs {
         friend class Agent;
         Agent* agent;
@@ -111,6 +113,12 @@ namespace libnice {
       static void onNewCandidateFull(
         NiceAgent* nice_agent
       , NiceCandidate* state
+      , gpointer user_data);
+
+      static void onReliableTransportWritable(
+        NiceAgent *agent
+      , guint stream_id
+      , guint component_id
       , gpointer user_data);
 
       static void receive(

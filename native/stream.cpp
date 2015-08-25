@@ -154,6 +154,7 @@ namespace libnice {
     bool res = nice_agent_gather_candidates(
       args->agent->nice_agent
     , args->stream->stream_id);
+    delete args;
     GLIB_CALLBACK_RETURN;
   }
 
@@ -169,6 +170,52 @@ namespace libnice {
     info.GetReturnValue().Set(Nan::Undefined());
   }
 
+  GLIB_CALLBACK(Stream::RunSend) {
+    auto args = reinterpret_cast<Stream::SendArgs*>(user_data);
+
+    /**
+     * Call into libnice to send the buffer
+     */
+
+    // memset(args->buf, '~', args->size);
+
+    int res = nice_agent_send(
+      args->nice_agent
+    , args->stream_id
+    , args->component_id
+    , args->size
+    , args->buf);
+
+    /**
+     * Invoke callback back on uv thread
+     */
+
+    if (args->callback) {
+      args->agent->run([res, args]() {
+        if (res >= 0) {
+          v8::Local<v8::Value> argv[] = {
+            Nan::Null()
+          , Nan::New(res)
+          };
+          args->callback->Call(2, argv);
+        } else {
+          v8::Local<v8::Value> argv[] = {
+            Nan::New(res)
+          };
+          args->callback->Call(1, argv);
+        }
+        delete args->callback;
+        delete args;
+      });
+    } else {
+        delete args->buf;
+        delete args;
+    }
+
+    GLIB_CALLBACK_RETURN;
+  }
+
+
   NAN_METHOD(Stream::Send) {
     v8::Isolate* isolate = v8::Isolate::GetCurrent();
     Stream* stream = Nan::ObjectWrap::Unwrap<Stream>(info.This());
@@ -182,21 +229,25 @@ namespace libnice {
           Nan::New("Expected buffer").ToLocalChecked()));
       return;
     }
-
     v8::Local<v8::Object> buffer = info[1]->ToObject();
 
-    size_t size = node::Buffer::Length(buffer);
-    char* buf = node::Buffer::Data(buffer);
+    Nan::Callback* callback = NULL;
+    if (!info[2]->IsUndefined()) {
+      callback = new Nan::Callback(info[2].As<v8::Function>());
+    }
 
-    int ret = nice_agent_send(
-      agent->nice_agent
-    , stream->stream_id
-    , component
-    , size
-    , buf);
+    auto args = new struct Stream::SendArgs;
+    args->agent = agent;
+    args->nice_agent = agent->nice_agent;
+    args->stream_id = stream->stream_id;
+    args->component_id = component;
+    args->size = node::Buffer::Length(buffer);
+    args->buf = node::Buffer::Data(buffer);
+    args->callback = callback;
+    RUN_GLIB(agent->main_context, Stream::RunSend, args);
 
-    info.GetReturnValue().Set(Nan::New(ret));
-}
+    info.GetReturnValue().Set(Nan::Undefined());
+  }
 
   /*****************************************************************************
    * Callbacks
@@ -222,6 +273,20 @@ namespace libnice {
       Nan::New("state-changed").ToLocalChecked()
     , Nan::New(component_id)
     , Nan::New(state)
+    };
+    Nan::MakeCallback(Nan::New(this->persistent()), "emit", argc, argv);
+  }
+
+  void Stream::onReliableTransportWritable(guint component_id) {
+    Nan::HandleScope scope;
+
+    Component* component = GET_COMPONENT(component_id);
+    component->onReliableTransportWritable();
+
+    const int argc = 2;
+    v8::Local<v8::Value> argv[argc] = {
+      Nan::New("reliable-transport-writable").ToLocalChecked()
+    , Nan::New(component_id)
     };
     Nan::MakeCallback(Nan::New(this->persistent()), "emit", argc, argv);
   }

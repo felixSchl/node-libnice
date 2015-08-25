@@ -36,11 +36,23 @@ namespace libnice {
         Nan::Callback* callback;
       };
 
+      struct SendArgs {
+        friend class Agent;
+        Agent* agent;
+        NiceAgent* nice_agent;
+        int stream_id;
+        int component_id;
+        size_t size;
+        char* buf;
+        Nan::Callback* callback;
+      };
+
       /**
        * Glib idle functions
        */
 
       static GLIB_CALLBACK(RunGatherCandidates);
+      static GLIB_CALLBACK(RunSend);
 
       static NAN_METHOD(New);
       static NAN_METHOD(GatherCandidates);
@@ -53,6 +65,7 @@ namespace libnice {
       void onData(int component, const char* buf, size_t size);
       void onGatheringDone();
       void onStateChanged(guint state, guint component_id);
+      void onReliableTransportWritable(guint component_id);
 
       Nan::Persistent<v8::Object> agent;
       Nan::Persistent<v8::Object> components;

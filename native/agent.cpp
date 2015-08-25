@@ -87,6 +87,12 @@ namespace libnice {
     , G_CALLBACK(Agent::onNewCandidateFull)
     , this);
 
+    g_signal_connect(
+      G_OBJECT(this->nice_agent)
+    , "reliable-transport-writable"
+    , G_CALLBACK(Agent::onReliableTransportWritable)
+    , this);
+
     /**
      * This creates a new thread, secure your v8 calls!
      */
@@ -469,6 +475,24 @@ namespace libnice {
       };
       Nan::MakeCallback(
         Nan::New(agent->persistent()), "emit", argc, argv);
+    });
+  }
+
+  void Agent::onReliableTransportWritable(
+    NiceAgent *nice_agent
+  , guint stream_id
+  , guint component_id
+  , gpointer user_data
+  ) {
+    Agent* agent = reinterpret_cast<Agent*>(user_data);
+
+    /**
+     * Invoke callback on matching stream
+     */
+
+    agent->run([agent, stream_id, component_id]() {
+      Stream* stream = GET_STREAM(stream_id);
+      stream->onReliableTransportWritable(component_id);
     });
   }
 }

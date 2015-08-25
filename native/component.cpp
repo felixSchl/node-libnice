@@ -73,19 +73,21 @@ namespace libnice {
   NAN_METHOD(Component::Send) {
     Component* component = Nan::ObjectWrap::Unwrap<Component>(info.This());
 
-    const int argc = 2;
+    const int argc = 3;
     v8::Local<v8::Value> argv[argc] = {
       Nan::New(component->id)
     , info[0]
+    , info[1]
     };
 
     /**
      * Proxy the call to `stream.send`
      */
 
-    Nan::New(component->stream)->Get(
-      Nan::New("send").ToLocalChecked())
-        .As<v8::Function>()->Call(Nan::New(component->stream), argc, argv);
+    info.GetReturnValue().Set(
+      Nan::New(component->stream)->Get(
+        Nan::New("send").ToLocalChecked())
+          .As<v8::Function>()->Call(Nan::New(component->stream), argc, argv));
 }
 
   /*****************************************************************************
@@ -107,6 +109,15 @@ namespace libnice {
     v8::Local<v8::Value> argv[argc] = {
       Nan::New("state-changed").ToLocalChecked()
     , Nan::New(state)
+    };
+    Nan::MakeCallback(Nan::New(this->persistent()), "emit", argc, argv);
+  }
+
+  void Component::onReliableTransportWritable() {
+    Nan::HandleScope scope;
+    const int argc = 1;
+    v8::Local<v8::Value> argv[argc] = {
+      Nan::New("reliable-transport-writable").ToLocalChecked()
     };
     Nan::MakeCallback(Nan::New(this->persistent()), "emit", argc, argv);
   }
